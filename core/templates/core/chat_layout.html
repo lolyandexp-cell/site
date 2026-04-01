@@ -450,7 +450,7 @@
     .chat {
         flex: 1;
         overflow-y: auto;
-        padding: 28px 26px 120px;
+        padding: 28px 26px 28px;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -732,10 +732,11 @@
     }
 
     .input-area {
-        position: sticky;
-        bottom: 0;
+        position: relative;
+        bottom: auto;
         z-index: 2;
         background: var(--input-bg);
+        flex-shrink: 0;
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
         border-top: 1px solid var(--input-border);
@@ -944,7 +945,7 @@
         }
 
         .chat {
-            padding: 12px 12px 120px;
+            padding: 12px 12px 20px;
             gap: 10px;
         }
 
@@ -973,7 +974,7 @@
         }
 
         .chat {
-            padding: 12px 10px 120px;
+            padding: 12px 10px 20px;
         }
 
         .message {
@@ -1485,7 +1486,6 @@ function loadDialogs() {
             dialogsInitialized = true;
 
             syncMainDialogTitle();
-            updateChatBottomSpacing();
         })
         .catch(err => console.error(err));
 }
@@ -1507,6 +1507,7 @@ const currentUserRole = '{{ request.user.role }}';
 const isAdmin = {% if request.user.role == 'admin' %}true{% else %}false{% endif %};
 const typingIndicator = document.getElementById('typingIndicator');
 const mainDialogTitle = document.getElementById('mainDialogTitle');
+const dialogsList = document.getElementById('dialogsList');
 
 let isUserNearBottom = true;
 let lastRenderedMessageSignature = null;
@@ -1521,23 +1522,17 @@ if (chat) {
     });
 }
 
+function getActiveDialogDisplayName() {
+    const activeName = document.querySelector('.dialog-item.active .dialog-name');
+    return activeName ? activeName.textContent.trim() : '';
+}
+
 function syncMainDialogTitle() {
     if (!mainDialogTitle) return;
 
-    const activeDialogName = document.querySelector('.dialog-item.active .dialog-name');
-    if (activeDialogName && activeDialogName.textContent.trim()) {
-        mainDialogTitle.textContent = activeDialogName.textContent.trim();
-    }
-}
-
-function updateChatBottomSpacing() {
-    if (!chat) return;
-
-    const inputArea = document.querySelector('.input-area');
-    const extraSpace = 24;
-
-    if (inputArea) {
-        chat.style.paddingBottom = `${inputArea.offsetHeight + extraSpace}px`;
+    const displayName = getActiveDialogDisplayName();
+    if (displayName) {
+        mainDialogTitle.textContent = displayName;
     }
 }
 
@@ -1608,8 +1603,6 @@ socket.onmessage = function(e) {
 
         const wasNearBottom = isUserNearBottom;
         chat.appendChild(renderMessage(msg, prevMsg));
-
-        updateChatBottomSpacing();
 
         if (wasNearBottom) {
             chat.scrollTop = chat.scrollHeight;
@@ -1832,8 +1825,6 @@ function loadMessages() {
 
             lastRenderedMessageSignature = newSignature;
 
-            updateChatBottomSpacing();
-
             if (wasNearBottom) {
                 chat.scrollTop = chat.scrollHeight;
             }
@@ -1964,9 +1955,15 @@ if (fileInput && selectedFileName) {
 
 loadMessages();
 syncMainDialogTitle();
-updateChatBottomSpacing();
 
-window.addEventListener('resize', updateChatBottomSpacing);
+if (dialogsList) {
+    const dialogsObserver = new MutationObserver(() => {
+        syncMainDialogTitle();
+    });
+    dialogsObserver.observe(dialogsList, { childList: true, subtree: true });
+}
+
+window.addEventListener('load', syncMainDialogTitle);
 
 if (messageInput && messageForm) {
     messageInput.addEventListener('input', function() {

@@ -3,6 +3,8 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
+
 
 from core.views import (
     dialog_list, dialog_detail, get_messages, get_dialogs, send_message,
@@ -26,8 +28,20 @@ urlpatterns = [
     path('api/dialogs/<int:dialog_id>/typing/get/', get_typing),
     path('api/push/subscribe/', save_push_subscription),
     path('api/push/unsubscribe/', delete_push_subscription),
-    path('service-worker.js', service_worker, name='service_worker'),
-    path('manifest.webmanifest', web_manifest, name='web_manifest'),
+    path(
+        "service-worker.js",
+        TemplateView.as_view(
+            template_name="core/service-worker.js",
+            content_type="application/javascript"
+        ),
+    ),
+    path(
+        "manifest.webmanifest",
+        TemplateView.as_view(
+            template_name="core/manifest.webmanifest",
+            content_type="application/manifest+json"
+        ),
+    ),
 ]
 
 if settings.DEBUG:

@@ -14,12 +14,12 @@ from pathlib import Path
 
 import os
 
-VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', """MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUKNI7AAq4xiCoTKKJDrEQy3NHHsQ
-Sf0jdoSDJh4GmRCXcUOyHlPcbJuMWXOQz4aFF1kXzzZ4i6jem7CafucVWg==""")
-VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', """MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg39u/xbzeqPyWMZA8
+VAPID_PUBLIC_KEY = """MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUKNI7AAq4xiCoTKKJDrEQy3NHHsQ
+Sf0jdoSDJh4GmRCXcUOyHlPcbJuMWXOQz4aFF1kXzzZ4i6jem7CafucVWg=="""
+VAPID_PRIVATE_KEY = """MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg39u/xbzeqPyWMZA8
 8XVxG1ZVan+u13D09KDgYFgu0AChRANCAARQo0jsACrjGIKhMookOsRDLc0cexBJ
-/SN2hIMmHgaZEJdxQ7IeU9xsm4xZc5DPhoUXWRfPNniLqN6bsJp+5xVa""")
-VAPID_ADMIN_EMAIL = os.getenv('VAPID_ADMIN_EMAIL', 'plakanm@mail.ru')
+/SN2hIMmHgaZEJdxQ7IeU9xsm4xZc5DPhoUXWRfPNniLqN6bsJp+5xVa"""
+VAPID_ADMIN_EMAIL = 'plakanm@mail.ru'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,7 +32,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-vb6jy9^qvzt7)92v&^-2utns*$%i=3gu8txbte!kh1jhct91#f'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'repetitorlite.ru',
@@ -50,9 +50,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
 
 
 # Application definition

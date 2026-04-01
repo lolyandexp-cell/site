@@ -1,11 +1,11 @@
 {
-  "name": "Учебный чат",
-  "short_name": "Чат",
+  "name": "RepetitorLite",
+  "short_name": "RepetitorLite",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#1d4ed8",
-  "description": "Чат для общения учеников, родителей, репетиторов и администраторов",
+  "description": "Чат для учеников, родителей, репетиторов и администраторов",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",

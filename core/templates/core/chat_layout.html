@@ -1069,7 +1069,6 @@
         color: var(--blue);
         font-weight: 700;
     }
-
 </style>
 </head>
 <body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody">
@@ -1224,6 +1223,21 @@
 </audio>
 
 <script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function applySavedTheme() {
     const body = document.getElementById('pageBody');
     const savedTheme = localStorage.getItem('chat_theme') || 'dark';
@@ -1492,7 +1506,9 @@ function loadDialogs() {
             previousDialogSnapshot = newSnapshot;
             dialogsInitialized = true;
 
-            syncMainDialogTitle();
+            if (typeof syncMainDialogTitle === 'function') {
+                syncMainDialogTitle();
+            }
         })
         .catch(err => console.error(err));
 }
@@ -1541,21 +1557,6 @@ function syncMainDialogTitle() {
     if (displayName) {
         mainDialogTitle.textContent = displayName;
     }
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
 }
 
 const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -2011,10 +2012,12 @@ if (chat) {
 }
 </script>
 {% endif %}
+
 <script>
 function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const normalized = (base64String || '').replace(/\s+/g, '');
+    const padding = '='.repeat((4 - normalized.length % 4) % 4);
+    const base64 = (normalized + padding).replace(/-/g, '+').replace(/_/g, '/');
     const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
 
@@ -2062,6 +2065,12 @@ async function enablePushNotifications() {
             return;
         }
 
+        const vapidKey = '{{ vapid_public_key|default:""|escapejs }}'.trim();
+        if (!vapidKey) {
+            alert('VAPID ключ не передан из backend');
+            return;
+        }
+
         const registration = await registerServiceWorker();
 
         let permission = Notification.permission;
@@ -2079,7 +2088,7 @@ async function enablePushNotifications() {
         if (!subscription) {
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array('{{ vapid_public_key }}')
+                applicationServerKey: urlBase64ToUint8Array(vapidKey)
             });
         }
 

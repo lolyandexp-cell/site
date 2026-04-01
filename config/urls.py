@@ -28,20 +28,8 @@ urlpatterns = [
     path('api/dialogs/<int:dialog_id>/typing/get/', get_typing),
     path('api/push/subscribe/', save_push_subscription),
     path('api/push/unsubscribe/', delete_push_subscription),
-    path(
-        "service-worker.js",
-        TemplateView.as_view(
-            template_name="core/service-worker.js",
-            content_type="application/javascript"
-        ),
-    ),
-    path(
-        "manifest.webmanifest",
-        TemplateView.as_view(
-            template_name="core/manifest.webmanifest",
-            content_type="application/manifest+json"
-        ),
-    ),
+    path('service-worker.js', service_worker, name='service_worker'),
+    path('manifest.webmanifest', web_manifest, name='web_manifest'),
 ]
 
 if settings.DEBUG:

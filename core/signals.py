@@ -119,12 +119,12 @@ def send_push_on_new_message(sender, instance, created, **kwargs):
             continue
 
         payload = {
-            'title': get_sender_name_for_receiver(receiver, instance.displayed_sender),
-            'body': get_message_preview(instance),
+            'title': ...,
+            'body': ...,
             'url': f'/dialogs/{instance.dialog_id}/',
             'dialog_id': instance.dialog_id,
             'tag': f'dialog-{instance.dialog_id}',
-            'icons': '/static/icons/icons-192.png',
+            'icon': '/static/icons/icon-192.png',
             'badge': '/static/icons/badge-72.png',
         }
 

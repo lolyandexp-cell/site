@@ -7,8 +7,8 @@ self.addEventListener('push', function(event) {
         data = {};
     }
 
-    const title = data.title || 'Новое сообщение';
-    const options = {
+        const title = data.title || 'Новое сообщение';
+        const options = {
         body: data.body || 'У вас новое сообщение',
         icon: data.icon || '/static/icons/icon-192.png',
         badge: data.badge || '/static/icons/badge-72.png',

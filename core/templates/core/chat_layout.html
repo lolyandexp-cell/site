@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <title>Чат</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#1d4ed8">
    <style>
     :root {
         --line: #e2e8f0;
@@ -1078,6 +1080,7 @@
         <div class="sidebar-links">
             <button type="button" onclick="setTheme('light')" class="theme-btn">☀️ Светлая</button>
             <button type="button" onclick="setTheme('dark')" class="theme-btn">🌙 Тёмная</button>
+            <button type="button" onclick="enablePushNotifications()" class="theme-btn">🔔 Уведомления</button>
             <a href="/logout/">Выйти</a>
         </div>
 
@@ -2008,5 +2011,93 @@ if (chat) {
 }
 </script>
 {% endif %}
+<script>
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+
+    return outputArray;
+}
+
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) {
+        throw new Error('Service Worker не поддерживается');
+    }
+
+    return await navigator.serviceWorker.register('/service-worker.js');
+}
+
+async function saveSubscriptionOnServer(subscription) {
+    const response = await fetch('/api/push/subscribe/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(subscription.toJSON())
+    });
+
+    if (!response.ok) {
+        throw new Error('Не удалось сохранить push-подписку');
+    }
+
+    return await response.json();
+}
+
+async function enablePushNotifications() {
+    try {
+        if (!('Notification' in window)) {
+            alert('Этот браузер не поддерживает уведомления');
+            return;
+        }
+
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            alert('Push-уведомления не поддерживаются в этом браузере');
+            return;
+        }
+
+        const registration = await registerServiceWorker();
+
+        let permission = Notification.permission;
+        if (permission !== 'granted') {
+            permission = await Notification.requestPermission();
+        }
+
+        if (permission !== 'granted') {
+            alert('Разрешение на уведомления не выдано');
+            return;
+        }
+
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array('{{ vapid_public_key }}')
+            });
+        }
+
+        await saveSubscriptionOnServer(subscription);
+        alert('Push-уведомления включены');
+    } catch (error) {
+        console.error(error);
+        alert('Не удалось включить push-уведомления');
+    }
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js').catch(err => {
+            console.error('Ошибка регистрации service worker:', err);
+        });
+    });
+}
+</script>
 </body>
 </html>

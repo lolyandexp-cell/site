@@ -8,6 +8,12 @@ from datetime import timedelta
 
 from .models import DialogMember, Dialog, Message, Attachment, MessageRead
 
+import json
+from django.conf import settings
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import PushSubscription
+
 typing_users = {}
 TYPING_TIMEOUT_SECONDS = 3
 
@@ -82,7 +88,26 @@ def dialog_list(request):
         'current_dialog': None,
         'messages': [],
         'members': [],
+        'vapid_public_key': settings.VAPID_PUBLIC_KEY,
     })
+
+def get_dialog_display_name_for_user(viewer, dialog):
+    members = dialog.dialogmember_set.select_related('user')
+    other_users = []
+
+    for m in members:
+        if m.user == viewer:
+            continue
+
+        if viewer.role in ['student', 'parent']:
+            other_users.append(m.user.display_name or m.user.username)
+        else:
+            other_users.append(m.user.username)
+
+    if not other_users:
+        return dialog.get_dialog_type_display()
+
+    return " / ".join(other_users)
 
 
 @login_required
@@ -106,11 +131,7 @@ def dialog_detail(request, dialog_id):
         'displayed_sender'
     ).prefetch_related('attachments').order_by('created_at')
 
-    current_dialog_name = " / ".join(
-        [m.user.username for m in members if m.user != request.user]
-    )
-    if not current_dialog_name:
-        current_dialog_name = dialog.get_dialog_type_display()
+    current_dialog_name = get_dialog_display_name_for_user(request.user, dialog)
 
     return render(request, 'core/chat_layout.html', {
         'dialogs': dialogs,
@@ -122,6 +143,7 @@ def dialog_detail(request, dialog_id):
         },
         'messages': messages,
         'members': members,
+        'vapid_public_key': settings.VAPID_PUBLIC_KEY,
     })
 
 
@@ -357,3 +379,57 @@ def get_typing(request, dialog_id):
         return JsonResponse({'typing': None})
 
     return JsonResponse({'typing': username})
+
+@login_required
+@require_POST
+def save_push_subscription(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'error': 'invalid_json'}, status=400)
+
+    endpoint = data.get('endpoint')
+    keys = data.get('keys', {})
+    p256dh = keys.get('p256dh')
+    auth = keys.get('auth')
+
+    if not endpoint or not p256dh or not auth:
+        return JsonResponse({'error': 'invalid_subscription'}, status=400)
+
+    PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={
+            'user': request.user,
+            'p256dh': p256dh,
+            'auth': auth,
+            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+        }
+    )
+
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@require_POST
+def delete_push_subscription(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'error': 'invalid_json'}, status=400)
+
+    endpoint = data.get('endpoint')
+    if not endpoint:
+        return JsonResponse({'error': 'missing_endpoint'}, status=400)
+
+    PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
+    return JsonResponse({'ok': True})
+
+
+def service_worker(request):
+    response = render(request, 'core/service-worker.js', content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    return response
+
+
+def web_manifest(request):
+    return render(request, 'core/manifest.webmanifest', content_type='application/manifest+json')

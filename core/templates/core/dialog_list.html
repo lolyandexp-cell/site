@@ -1,0 +1,20 @@
+<h1>Мои диалоги</h1>
+
+<ul>
+    {% for dialog in dialogs %}
+        <li>
+            <a href="{% url 'dialog_detail' dialog.id %}">
+                {{ dialog.name }}
+            </a>
+        </li>
+    {% empty %}
+        <li>Нет диалогов</li>
+    {% endfor %}
+</ul>
+
+<hr>
+
+<p>
+    <a href="/admin/">Админка</a> |
+    <a href="/logout/">Выйти</a>
+</p>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <style>
+        :root {
+            --text: #0f172a;
+            --text-soft: #64748b;
+            --line: #dbe3ee;
+            --blue: #2563eb;
+            --blue-2: #3b82f6;
+            --blue-soft: #eff6ff;
+            --danger-bg: #fef2f2;
+            --danger-line: #fecaca;
+            --danger-text: #b91c1c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.10), transparent 24%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.10);
+            padding: 30px 28px 24px;
+        }
+
+        .title {
+            margin: 0 0 8px;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            margin: 0 0 24px;
+            color: var(--text-soft);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .error-box {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-line);
+            color: var(--danger-text);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field label {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.92);
+            font: inherit;
+            color: var(--text);
+            outline: none;
+            transition: 0.18s ease;
+        }
+
+        .field input:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+            background: #fff;
+        }
+
+        .submit-btn {
+            margin-top: 4px;
+            border: none;
+            border-radius: 16px;
+            padding: 13px 18px;
+            background: linear-gradient(135deg, var(--blue), var(--blue-2));
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
+            transition: 0.18s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .footer-text {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-soft);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="title">Вход</h1>
+        <p class="subtitle">Войди в систему, чтобы открыть свои диалоги.</p>
+
+        {% if form.errors %}
+            <div class="error-box">
+                Неверный логин или пароль.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="field">
+                <label for="id_username">Логин</label>
+                <input type="text" name="username" id="id_username" autofocus>
+            </div>
+
+            <div class="field">
+                <label for="id_password">Пароль</label>
+                <input type="password" name="password" id="id_password">
+            </div>
+
+            <button type="submit" class="submit-btn">Войти</button>
+        </form>
+
+        <div class="footer-text">
+            Закрытая система общения
+        </div>
+    </div>
+</body>
+</html>

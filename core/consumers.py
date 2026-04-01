@@ -1,6 +1,5 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 
 from .models import Dialog, Message, DialogMember
@@ -13,7 +12,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         user = self.scope["user"]
 
-        if isinstance(user, AnonymousUser):
+        if not user.is_authenticated:
             await self.close()
             return
 

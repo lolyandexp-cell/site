@@ -124,7 +124,7 @@ def send_push_on_new_message(sender, instance, created, **kwargs):
             'url': f'/dialogs/{instance.dialog_id}/',
             'dialog_id': instance.dialog_id,
             'tag': f'dialog-{instance.dialog_id}',
-            'icon': '/static/icons/icon-192.png',
+            'icons': '/static/icons/icons-192.png',
             'badge': '/static/icons/badge-72.png',
         }
 

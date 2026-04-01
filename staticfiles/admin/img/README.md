@@ -59,7 +59,7 @@ licensing URL accordingly. For example:
    the appropriate values:
 ```xml
 <!--
-  Icon Name: [icon-name]
+  Icon Name: [icons-name]
   Icon Family: [classic | sharp | brands | etc.]
   Icon Style: [solid | regular | light | thin | duotone | etc.]
 -->

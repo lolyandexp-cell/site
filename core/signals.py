@@ -109,7 +109,9 @@ def send_push_on_new_message(sender, instance, created, **kwargs):
     if not settings.VAPID_PUBLIC_KEY or not settings.VAPID_PRIVATE_KEY:
         return
 
-    recipients = instance.dialog.dialogmember_set.exclude(user=instance.real_sender).select_related('user')
+    recipients = instance.dialog.dialogmember_set.exclude(
+        user=instance.real_sender
+    ).select_related('user')
 
     for member in recipients:
         receiver = member.user
@@ -118,9 +120,12 @@ def send_push_on_new_message(sender, instance, created, **kwargs):
         if not subscriptions.exists():
             continue
 
+        sender_name = get_sender_name_for_receiver(receiver, instance.real_sender)
+        message_preview = get_message_preview(instance)
+
         payload = {
-            'title': ...,
-            'body': ...,
+            'title': sender_name,
+            'body': message_preview,
             'url': f'/dialogs/{instance.dialog_id}/',
             'dialog_id': instance.dialog_id,
             'tag': f'dialog-{instance.dialog_id}',

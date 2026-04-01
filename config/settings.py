@@ -16,7 +16,7 @@ import os
 
 VAPID_PUBLIC_KEY = """BA1F2IdV0MJBqDgGJ_OaB8KpnZLUDG-oOnJ-MJJ7IXFPPpcAMIn2nqH5pU9woy7q-dW4x-wZAdxOmuefw3F38yk"""
 VAPID_PRIVATE_KEY = """qpQV2UmGYLG12zBVUVTXD9aMWR9IjRLXo6kipFdjECQ"""
-VAPID_ADMIN_EMAIL = 'plakanm@mail.ru'
+VAPID_ADMIN_EMAIL = 'mailto:plakanm@mail.ru'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

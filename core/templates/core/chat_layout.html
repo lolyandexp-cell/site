@@ -79,6 +79,8 @@
         --scroll-btn-bg: rgba(255,255,255,0.92);
         --scroll-btn-border: rgba(226, 232, 240, 0.95);
         --scroll-btn-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
+        --new-divider-bg: rgba(255,255,255,0.82);
+        --new-divider-border: rgba(226, 232, 240, 0.95);
     }
 
     body.theme-dark {
@@ -141,6 +143,8 @@
         --scroll-btn-bg: rgba(15, 23, 42, 0.96);
         --scroll-btn-border: #334155;
         --scroll-btn-shadow: 0 14px 32px rgba(2, 6, 23, 0.38);
+        --new-divider-bg: rgba(15, 23, 42, 0.94);
+        --new-divider-border: #334155;
     }
 
     * { box-sizing: border-box; }
@@ -487,12 +491,6 @@
         letter-spacing: -0.02em;
     }
 
-    .main-subtitle {
-        font-size: 13px;
-        color: var(--text-soft);
-        margin-top: 5px;
-    }
-
     .typing-indicator {
         font-size: 12px;
         color: var(--text-soft);
@@ -683,6 +681,27 @@
         display: block;
     }
 
+    .new-messages-divider {
+        align-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--new-divider-border);
+        background: var(--new-divider-bg);
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 800;
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        position: sticky;
+        top: 12px;
+        z-index: 2;
+    }
+
     .input-area {
         position: relative;
         bottom: auto;
@@ -809,8 +828,9 @@
         position: absolute;
         right: 22px;
         bottom: 96px;
-        width: 52px;
+        min-width: 52px;
         height: 52px;
+        padding: 0 14px;
         border: 1px solid var(--scroll-btn-border);
         border-radius: 18px;
         background: var(--scroll-btn-bg);
@@ -818,6 +838,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        gap: 6px;
         cursor: pointer;
         box-shadow: var(--scroll-btn-shadow);
         backdrop-filter: blur(16px);
@@ -842,7 +863,25 @@
     .scroll-to-bottom-btn svg {
         width: 22px;
         height: 22px;
+        flex-shrink: 0;
     }
+
+    .scroll-bottom-count {
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--blue), var(--blue-2));
+        color: #fff;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .scroll-bottom-count.visible { display: inline-flex; }
 
     .dialogs::-webkit-scrollbar,
     .chat::-webkit-scrollbar { width: 10px; }
@@ -1013,7 +1052,6 @@
         .dialog-time { font-size: 11px; }
         .main-header { padding: 14px 14px; }
         .main-title { font-size: 20px; }
-        .main-subtitle { font-size: 12px; }
         .chat { padding: 12px 10px 10px; gap: 10px; }
         .message { max-width: 90%; font-size: 14px; padding: 12px 13px; }
         .input-area { padding: 8px 10px max(8px, env(safe-area-inset-bottom, 0px)); }
@@ -1041,9 +1079,10 @@
         .scroll-to-bottom-btn {
             right: 12px;
             bottom: 84px;
-            width: 48px;
+            min-width: 48px;
             height: 48px;
             border-radius: 16px;
+            padding: 0 12px;
         }
     }
 </style>
@@ -1063,11 +1102,9 @@
 
                 <div class="settings-menu" id="settingsMenu">
                     <div class="settings-menu-label">Оформление</div>
-                    <button type="button" class="settings-item" onclick="setThemeAndClose('light')">
-                        <div class="settings-item-left">☀️ <span>Светлая тема</span></div>
-                    </button>
-                    <button type="button" class="settings-item" onclick="setThemeAndClose('dark')">
-                        <div class="settings-item-left">🌙 <span>Тёмная тема</span></div>
+                    <button type="button" class="settings-item" onclick="toggleThemeAndClose()">
+                        <div class="settings-item-left"><span id="themeToggleEmoji">🌙</span> <span id="themeToggleText">Переключить тему</span></div>
+                        <span class="settings-status" id="themeStatusLabel">Тёмная</span>
                     </button>
 
                     <div class="settings-menu-label">Уведомления</div>
@@ -1128,12 +1165,6 @@
                 <a href="/" class="back-link">←</a>
                 <div class="main-header-text">
                     <div class="main-title" id="mainDialogTitle">{{ current_dialog.name }}</div>
-                    <div class="main-subtitle">
-                        {{ current_dialog.type }}
-                        {% if current_dialog.status %}
-                            • {{ current_dialog.status }}
-                        {% endif %}
-                    </div>
                     <div id="typingIndicator" class="typing-indicator"></div>
                 </div>
             </div>
@@ -1173,6 +1204,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 5v12m0 0l-5-5m5 5l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
+                <span class="scroll-bottom-count" id="scrollBottomCount">0</span>
             </button>
 
             <div class="input-area">
@@ -1203,7 +1235,6 @@
             <div class="main-header">
                 <div class="main-header-text">
                     <div class="main-title">Чаты</div>
-                    <div class="main-subtitle">Выбери диалог слева</div>
                 </div>
             </div>
             <div class="chat">
@@ -1251,12 +1282,33 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+function updateThemeToggleUI() {
+    const body = document.getElementById('pageBody');
+    const themeStatusLabel = document.getElementById('themeStatusLabel');
+    const themeToggleEmoji = document.getElementById('themeToggleEmoji');
+    const themeToggleText = document.getElementById('themeToggleText');
+    const isDark = body.classList.contains('theme-dark');
+
+    if (themeStatusLabel) {
+        themeStatusLabel.textContent = isDark ? 'Тёмная' : 'Светлая';
+    }
+
+    if (themeToggleEmoji) {
+        themeToggleEmoji.textContent = isDark ? '☀️' : '🌙';
+    }
+
+    if (themeToggleText) {
+        themeToggleText.textContent = isDark ? 'Переключить на светлую' : 'Переключить на тёмную';
+    }
+}
+
 function applySavedTheme() {
     const body = document.getElementById('pageBody');
     const savedTheme = localStorage.getItem('chat_theme') || 'dark';
 
     body.classList.remove('theme-light', 'theme-dark');
     body.classList.add(`theme-${savedTheme}`);
+    updateThemeToggleUI();
 }
 
 function setTheme(theme) {
@@ -1264,8 +1316,14 @@ function setTheme(theme) {
     applySavedTheme();
 }
 
-function setThemeAndClose(theme) {
-    setTheme(theme);
+function toggleTheme() {
+    const body = document.getElementById('pageBody');
+    const nextTheme = body.classList.contains('theme-dark') ? 'light' : 'dark';
+    setTheme(nextTheme);
+}
+
+function toggleThemeAndClose() {
+    toggleTheme();
     closeSettingsMenu();
 }
 
@@ -1293,15 +1351,11 @@ let titleBlinkInterval = null;
 let titleBlinkCount = 0;
 
 function openSettingsMenu() {
-    if (settingsMenu) {
-        settingsMenu.classList.add('open');
-    }
+    if (settingsMenu) settingsMenu.classList.add('open');
 }
 
 function closeSettingsMenu() {
-    if (settingsMenu) {
-        settingsMenu.classList.remove('open');
-    }
+    if (settingsMenu) settingsMenu.classList.remove('open');
 }
 
 if (settingsTrigger) {
@@ -1386,15 +1440,11 @@ function showToast(title, text, dialogName, dialogUrl) {
 
     toastContainer.appendChild(toast);
 
-    requestAnimationFrame(() => {
-        toast.classList.add('show');
-    });
+    requestAnimationFrame(() => toast.classList.add('show'));
 
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => {
-            toast.remove();
-        }, 220);
+        setTimeout(() => toast.remove(), 220);
     }, 4200);
 }
 
@@ -1444,9 +1494,7 @@ function showBrowserNotification(dialogName, messageText, dialogUrl) {
 
         notification.onclick = function() {
             window.focus();
-            if (dialogUrl) {
-                window.location.href = dialogUrl;
-            }
+            if (dialogUrl) window.location.href = dialogUrl;
             notification.close();
         };
 
@@ -1462,9 +1510,7 @@ function showBrowserNotification(dialogName, messageText, dialogUrl) {
 });
 
 document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-        stopTitleBlink();
-    }
+    if (!document.hidden) stopTitleBlink();
 });
 
 function applyDialogFilter() {
@@ -1479,9 +1525,7 @@ function applyDialogFilter() {
     });
 }
 
-if (searchInput) {
-    searchInput.addEventListener('input', applyDialogFilter);
-}
+if (searchInput) searchInput.addEventListener('input', applyDialogFilter);
 
 function openImageViewer(src, alt) {
     if (!imageViewer || !imageViewerImg || !src) return;
@@ -1506,15 +1550,11 @@ document.addEventListener('click', function(event) {
     }
 });
 
-if (imageViewerClose) {
-    imageViewerClose.addEventListener('click', closeImageViewer);
-}
+if (imageViewerClose) imageViewerClose.addEventListener('click', closeImageViewer);
 
 if (imageViewer) {
     imageViewer.addEventListener('click', function(event) {
-        if (event.target === imageViewer) {
-            closeImageViewer();
-        }
+        if (event.target === imageViewer) closeImageViewer();
     });
 }
 
@@ -1532,14 +1572,10 @@ function renderDialogItem(d) {
     el.className = 'dialog-item';
 
     {% if current_dialog %}
-    if (d.id === {{ current_dialog.id }}) {
-        el.classList.add('active');
-    }
+    if (d.id === {{ current_dialog.id }}) el.classList.add('active');
     {% endif %}
 
-    if (unread > 0) {
-        el.classList.add('has-new');
-    }
+    if (unread > 0) el.classList.add('has-new');
 
     const safeName = escapeHtml(d.name || 'Чат');
     const safeLastMessage = escapeHtml(d.last_message || 'Нет сообщений');
@@ -1608,21 +1644,11 @@ function loadDialogs() {
                 dialogs.forEach(d => list.appendChild(renderDialogItem(d)));
                 previousDialogSnapshotString = snapshotString;
                 applyDialogFilter();
-
-                if (typeof syncMainDialogTitle === 'function') {
-                    syncMainDialogTitle();
-                }
+                if (typeof syncMainDialogTitle === 'function') syncMainDialogTitle();
             }
 
-            if (shouldPlaySound) {
-                playNotificationSound();
-            }
-
-            if (totalUnread > 0) {
-                startTitleBlink(totalUnread);
-            } else {
-                stopTitleBlink();
-            }
+            if (shouldPlaySound) playNotificationSound();
+            if (totalUnread > 0) startTitleBlink(totalUnread); else stopTitleBlink();
 
             previousUnreadMap = newUnreadMap;
             dialogsInitialized = true;
@@ -1641,7 +1667,6 @@ const dialogId = {{ current_dialog.id }};
 const messageInput = document.getElementById('messageInput');
 const messageForm = document.getElementById('messageForm');
 const fileInput = document.getElementById('fileInput');
-const displayedSenderSelect = null;
 const currentUserId = {{ request.user.id }};
 const currentUserRole = '{{ request.user.role }}';
 const isAdmin = {% if request.user.role == 'admin' %}true{% else %}false{% endif %};
@@ -1649,15 +1674,51 @@ const typingIndicator = document.getElementById('typingIndicator');
 const mainDialogTitle = document.getElementById('mainDialogTitle');
 const dialogsList = document.getElementById('dialogsList');
 const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+const scrollBottomCount = document.getElementById('scrollBottomCount');
+const selectedFileName = document.getElementById('selectedFileName');
+const draftStorageKey = `chat_draft_${dialogId}`;
 
 let isUserNearBottom = true;
 let lastRenderedMessageSignature = null;
 let typingIndicatorTimeout = null;
 let typingThrottleTimeout = null;
+let pendingNewMessagesCount = 0;
+let newMessagesDivider = null;
 
 function updateScrollButtonVisibility() {
     if (!chat || !scrollToBottomBtn) return;
     scrollToBottomBtn.classList.toggle('visible', !isUserNearBottom && chat.scrollHeight > chat.clientHeight + 100);
+
+    if (scrollBottomCount) {
+        scrollBottomCount.textContent = pendingNewMessagesCount > 99 ? '99+' : String(pendingNewMessagesCount);
+        scrollBottomCount.classList.toggle('visible', pendingNewMessagesCount > 0);
+    }
+}
+
+function createNewMessagesDivider() {
+    const divider = document.createElement('div');
+    divider.className = 'new-messages-divider';
+    divider.textContent = 'Новые сообщения';
+    return divider;
+}
+
+function ensureNewMessagesDivider() {
+    if (!chat || newMessagesDivider) return;
+    newMessagesDivider = createNewMessagesDivider();
+    chat.appendChild(newMessagesDivider);
+}
+
+function removeNewMessagesDivider() {
+    if (newMessagesDivider) {
+        newMessagesDivider.remove();
+        newMessagesDivider = null;
+    }
+}
+
+function resetPendingNewMessages() {
+    pendingNewMessagesCount = 0;
+    removeNewMessagesDivider();
+    updateScrollButtonVisibility();
 }
 
 function scrollChatToBottom(force = false) {
@@ -1668,14 +1729,41 @@ function scrollChatToBottom(force = false) {
         chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
     }
     isUserNearBottom = true;
-    updateScrollButtonVisibility();
+    resetPendingNewMessages();
+}
+
+function saveDraft() {
+    if (!messageInput) return;
+    const value = messageInput.value || '';
+    if (value.trim()) {
+        localStorage.setItem(draftStorageKey, value);
+    } else {
+        localStorage.removeItem(draftStorageKey);
+    }
+}
+
+function restoreDraft() {
+    if (!messageInput) return;
+    const savedDraft = localStorage.getItem(draftStorageKey);
+    if (savedDraft) {
+        messageInput.value = savedDraft;
+        autoResizeTextarea();
+    }
+}
+
+function focusMessageInput() {
+    if (!messageInput) return;
+    if (window.innerWidth <= 768) return;
+    messageInput.focus();
+    const length = messageInput.value.length;
+    messageInput.setSelectionRange(length, length);
 }
 
 if (chat) {
     chat.addEventListener('scroll', () => {
         const threshold = 100;
         isUserNearBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < threshold;
-        updateScrollButtonVisibility();
+        if (isUserNearBottom) resetPendingNewMessages(); else updateScrollButtonVisibility();
     });
 }
 
@@ -1693,9 +1781,7 @@ function getActiveDialogDisplayName() {
 function syncMainDialogTitle() {
     if (!mainDialogTitle) return;
     const displayName = getActiveDialogDisplayName();
-    if (displayName) {
-        mainDialogTitle.textContent = displayName;
-    }
+    if (displayName) mainDialogTitle.textContent = displayName;
 }
 
 const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -1711,11 +1797,7 @@ socket.onmessage = function(e) {
     if (data.event_type === 'typing') {
         if (data.user_id !== currentUserId && typingIndicator) {
             typingIndicator.textContent = `${data.username} печатает...`;
-
-            if (typingIndicatorTimeout) {
-                clearTimeout(typingIndicatorTimeout);
-            }
-
+            if (typingIndicatorTimeout) clearTimeout(typingIndicatorTimeout);
             typingIndicatorTimeout = setTimeout(() => {
                 typingIndicator.textContent = '';
             }, 2000);
@@ -1749,19 +1831,18 @@ socket.onmessage = function(e) {
 
         const wasNearBottom = isUserNearBottom;
         if (chat) {
+            if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
             chat.appendChild(renderMessage(msg, prevMsg));
         }
 
-        if (wasNearBottom) {
+        if (wasNearBottom || msg.is_me) {
             scrollChatToBottom(true);
         } else {
+            pendingNewMessagesCount += 1;
             updateScrollButtonVisibility();
         }
 
-        if (!msg.is_me) {
-            playNotificationSound();
-        }
-
+        if (!msg.is_me) playNotificationSound();
         loadDialogs();
     }
 };
@@ -1786,18 +1867,12 @@ function sendTyping() {
 }
 
 function closeAllMessageMenus() {
-    document.querySelectorAll('.message-dropdown.open').forEach(menu => {
-        menu.classList.remove('open');
-    });
-
-    document.querySelectorAll('.message-row.menu-open').forEach(row => {
-        row.classList.remove('menu-open');
-    });
+    document.querySelectorAll('.message-dropdown.open').forEach(menu => menu.classList.remove('open'));
+    document.querySelectorAll('.message-row.menu-open').forEach(row => row.classList.remove('menu-open'));
 }
 
 function toggleMessageMenu(event, messageId) {
     event.stopPropagation();
-
     const menu = document.getElementById(`message-menu-${messageId}`);
     if (!menu) return;
 
@@ -1808,9 +1883,7 @@ function toggleMessageMenu(event, messageId) {
 
     if (!isOpen) {
         menu.classList.add('open');
-        if (row) {
-            row.classList.add('menu-open');
-        }
+        if (row) row.classList.add('menu-open');
     }
 }
 
@@ -1823,9 +1896,7 @@ function deleteMessage(messageId) {
 
     fetch(`/api/messages/${messageId}/delete/`, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
     })
     .then(res => {
         if (!res.ok) throw new Error('Ошибка удаления');
@@ -1856,9 +1927,7 @@ function editMessage(messageId, encodedText) {
 
     fetch(`/api/messages/${messageId}/edit/`, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
         body: formData
     })
     .then(res => {
@@ -1883,9 +1952,7 @@ function renderMessage(msg, prevMsg = null) {
     message.className = 'message';
 
     const isSameSender = prevMsg && prevMsg.displayed_sender_id === msg.displayed_sender_id && prevMsg.is_me === msg.is_me;
-    if (msg.can_edit || msg.can_delete) {
-        message.classList.add('has-menu');
-    }
+    if (msg.can_edit || msg.can_delete) message.classList.add('has-menu');
 
     let menuHtml = '';
     if (msg.can_edit || msg.can_delete) {
@@ -1968,6 +2035,7 @@ function loadMessages() {
 
             const wasNearBottom = isUserNearBottom;
             chat.innerHTML = '';
+            removeNewMessagesDivider();
 
             messages.forEach((msg, index) => {
                 const prevMsg = index > 0 ? messages[index - 1] : null;
@@ -1983,6 +2051,14 @@ function loadMessages() {
             }
         })
         .catch(err => console.error(err));
+}
+
+function clearSelectedFiles() {
+    if (fileInput) fileInput.value = '';
+    if (selectedFileName) {
+        selectedFileName.textContent = '';
+        selectedFileName.classList.remove('has-file');
+    }
 }
 
 function sendMessageAjax() {
@@ -2001,9 +2077,7 @@ function sendMessageAjax() {
 
         fetch(`/api/dialogs/${dialogId}/send/`, {
             method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
             body: formData
         })
         .then(res => {
@@ -2016,19 +2090,13 @@ function sendMessageAjax() {
                 autoResizeTextarea();
             }
 
-            if (fileInput) {
-                fileInput.value = '';
-            }
-
-            if (selectedFileName) {
-                selectedFileName.textContent = '';
-                selectedFileName.classList.remove('has-file');
-            }
-
+            localStorage.removeItem(draftStorageKey);
+            clearSelectedFiles();
             lastRenderedMessageSignature = null;
             loadMessages();
             loadDialogs();
             scrollChatToBottom(true);
+            focusMessageInput();
         })
         .catch(err => console.error(err));
 
@@ -2048,7 +2116,9 @@ function sendMessageAjax() {
             autoResizeTextarea();
         }
 
+        localStorage.removeItem(draftStorageKey);
         scrollChatToBottom(true);
+        focusMessageInput();
         return;
     }
 
@@ -2057,9 +2127,7 @@ function sendMessageAjax() {
 
     fetch(`/api/dialogs/${dialogId}/send/`, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
         body: formData
     })
     .then(res => {
@@ -2072,10 +2140,12 @@ function sendMessageAjax() {
             autoResizeTextarea();
         }
 
+        localStorage.removeItem(draftStorageKey);
         lastRenderedMessageSignature = null;
         loadMessages();
         loadDialogs();
         scrollChatToBottom(true);
+        focusMessageInput();
     })
     .catch(err => console.error(err));
 }
@@ -2085,8 +2155,6 @@ function autoResizeTextarea() {
     messageInput.style.height = 'auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 220) + 'px';
 }
-
-const selectedFileName = document.getElementById('selectedFileName');
 
 if (fileInput && selectedFileName) {
     fileInput.addEventListener('change', function() {
@@ -2098,13 +2166,13 @@ if (fileInput && selectedFileName) {
             }
             selectedFileName.classList.add('has-file');
         } else {
-            selectedFileName.textContent = '';
-            selectedFileName.classList.remove('has-file');
+            clearSelectedFiles();
         }
     });
 }
 
 loadMessages();
+restoreDraft();
 syncMainDialogTitle();
 
 if (dialogsList) {
@@ -2117,11 +2185,13 @@ if (dialogsList) {
 window.addEventListener('load', function() {
     syncMainDialogTitle();
     scrollChatToBottom(true);
+    focusMessageInput();
 });
 
 if (messageInput && messageForm) {
     messageInput.addEventListener('input', function() {
         autoResizeTextarea();
+        saveDraft();
         sendTyping();
     });
 
@@ -2152,10 +2222,7 @@ if (chat) {
         if (!files || !files.length || !fileInput) return;
 
         const dt = new DataTransfer();
-        for (const file of files) {
-            dt.items.add(file);
-        }
-
+        for (const file of files) dt.items.add(file);
         fileInput.files = dt.files;
 
         if (selectedFileName) {
@@ -2194,12 +2261,8 @@ async function getServiceWorkerRegistration() {
     }
 
     let registration = await navigator.serviceWorker.getRegistration('/service-worker.js');
-    if (!registration) {
-        registration = await navigator.serviceWorker.getRegistration();
-    }
-    if (!registration) {
-        registration = await navigator.serviceWorker.register('/service-worker.js');
-    }
+    if (!registration) registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) registration = await navigator.serviceWorker.register('/service-worker.js');
 
     return registration;
 }
@@ -2214,10 +2277,7 @@ async function saveSubscriptionOnServer(subscription) {
         body: JSON.stringify(subscription.toJSON())
     });
 
-    if (!response.ok) {
-        throw new Error('Не удалось сохранить push-подписку');
-    }
-
+    if (!response.ok) throw new Error('Не удалось сохранить push-подписку');
     return await response.json();
 }
 
@@ -2267,9 +2327,7 @@ async function enablePushNotifications() {
         const registration = await getServiceWorkerRegistration();
 
         let permission = Notification.permission;
-        if (permission !== 'granted') {
-            permission = await Notification.requestPermission();
-        }
+        if (permission !== 'granted') permission = await Notification.requestPermission();
 
         if (permission !== 'granted') {
             await updatePushStatusLabel();

@@ -76,6 +76,9 @@
         --settings-menu-bg: rgba(255, 255, 255, 0.95);
         --settings-item-hover: rgba(37, 99, 235, 0.08);
         --overlay-bg: rgba(15, 23, 42, 0.86);
+        --scroll-btn-bg: rgba(255,255,255,0.92);
+        --scroll-btn-border: rgba(226, 232, 240, 0.95);
+        --scroll-btn-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
     }
 
     body.theme-dark {
@@ -135,15 +138,13 @@
         --settings-menu-bg: rgba(15, 23, 42, 0.98);
         --settings-item-hover: rgba(59, 130, 246, 0.12);
         --overlay-bg: rgba(2, 6, 23, 0.90);
+        --scroll-btn-bg: rgba(15, 23, 42, 0.96);
+        --scroll-btn-border: #334155;
+        --scroll-btn-shadow: 0 14px 32px rgba(2, 6, 23, 0.38);
     }
 
-    * {
-        box-sizing: border-box;
-    }
-
-    html, body {
-        height: 100%;
-    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
 
     body {
         margin: 0;
@@ -153,9 +154,7 @@
         overflow: hidden;
     }
 
-    a, button, input, textarea, select {
-        font: inherit;
-    }
+    a, button, input, textarea, select { font: inherit; }
 
     .app {
         display: flex;
@@ -194,14 +193,8 @@
         gap: 12px;
     }
 
-    .sidebar-title {
-        min-width: 0;
-    }
-
-    .header-tools {
-        position: relative;
-        flex-shrink: 0;
-    }
+    .sidebar-title { min-width: 0; }
+    .header-tools { position: relative; flex-shrink: 0; }
 
     .settings-trigger {
         width: 42px;
@@ -223,10 +216,7 @@
         background: var(--theme-btn-hover);
     }
 
-    .settings-trigger svg {
-        width: 20px;
-        height: 20px;
-    }
+    .settings-trigger svg { width: 20px; height: 20px; }
 
     .settings-menu {
         position: absolute;
@@ -244,9 +234,7 @@
         -webkit-backdrop-filter: blur(18px);
     }
 
-    .settings-menu.open {
-        display: block;
-    }
+    .settings-menu.open { display: block; }
 
     .settings-menu-label {
         font-size: 11px;
@@ -276,9 +264,7 @@
     }
 
     .settings-item:hover,
-    .settings-link:hover {
-        background: var(--settings-item-hover);
-    }
+    .settings-link:hover { background: var(--settings-item-hover); }
 
     .settings-item-left {
         display: flex;
@@ -294,13 +280,8 @@
         white-space: nowrap;
     }
 
-    .status-on {
-        color: #22c55e;
-    }
-
-    .status-off {
-        color: #f59e0b;
-    }
+    .status-on { color: #22c55e; }
+    .status-off { color: #f59e0b; }
 
     .search-box {
         padding: 14px 16px;
@@ -323,9 +304,7 @@
         box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
     }
 
-    .search-box input::placeholder {
-        color: var(--text-faint);
-    }
+    .search-box input::placeholder { color: var(--text-faint); }
 
     .search-box input:focus {
         border-color: #93c5fd;
@@ -499,13 +478,8 @@
         flex-shrink: 0;
     }
 
-    .back-link:hover {
-        background: var(--back-hover-bg);
-    }
-
-    .main-header-text {
-        min-width: 0;
-    }
+    .back-link:hover { background: var(--back-hover-bg); }
+    .main-header-text { min-width: 0; }
 
     .main-title {
         font-weight: 800;
@@ -536,6 +510,7 @@
         position: relative;
         z-index: 1;
         min-height: 0;
+        scroll-behavior: smooth;
     }
 
     .empty-chat {
@@ -558,9 +533,7 @@
         z-index: 1;
     }
 
-    .message-row.menu-open {
-        z-index: 50;
-    }
+    .message-row.menu-open { z-index: 50; }
 
     .message:hover {
         transform: translateY(-1px);
@@ -574,9 +547,7 @@
         z-index: 5;
     }
 
-    .message-row.other .message-menu-wrapper {
-        right: 10px;
-    }
+    .message-row.other .message-menu-wrapper { right: 10px; }
 
     .menu-trigger {
         width: 30px;
@@ -593,13 +564,8 @@
         transition: 0.18s ease;
     }
 
-    .menu-trigger:hover {
-        background: rgba(255, 255, 255, 0.10);
-    }
-
-    body.theme-light .menu-trigger:hover {
-        background: rgba(15, 23, 42, 0.06);
-    }
+    .menu-trigger:hover { background: rgba(255, 255, 255, 0.10); }
+    body.theme-light .menu-trigger:hover { background: rgba(15, 23, 42, 0.06); }
 
     .message-dropdown {
         position: absolute;
@@ -615,9 +581,7 @@
         z-index: 100;
     }
 
-    .message-dropdown.open {
-        display: block;
-    }
+    .message-dropdown.open { display: block; }
 
     .message-dropdown button {
         width: 100%;
@@ -632,33 +596,13 @@
         transition: 0.16s ease;
     }
 
-    .message-dropdown button:hover {
-        background: rgba(59, 130, 246, 0.08);
-    }
-
-    .message-dropdown .danger-item {
-        color: #ef4444;
-    }
-
-    .message-dropdown .danger-item:hover {
-        background: rgba(239, 68, 68, 0.10);
-    }
-
-    .message-row.my {
-        justify-content: flex-end;
-    }
-
-    .message-row.my + .message-row.my .message {
-        border-top-right-radius: 10px;
-    }
-
-    .message-row.other + .message-row.other .message {
-        border-top-left-radius: 10px;
-    }
-
-    .message-row.other {
-        justify-content: flex-start;
-    }
+    .message-dropdown button:hover { background: rgba(59, 130, 246, 0.08); }
+    .message-dropdown .danger-item { color: #ef4444; }
+    .message-dropdown .danger-item:hover { background: rgba(239, 68, 68, 0.10); }
+    .message-row.my { justify-content: flex-end; }
+    .message-row.my + .message-row.my .message { border-top-right-radius: 10px; }
+    .message-row.other + .message-row.other .message { border-top-left-radius: 10px; }
+    .message-row.other { justify-content: flex-start; }
 
     .message {
         max-width: min(640px, 72%);
@@ -671,9 +615,7 @@
         overflow: visible;
     }
 
-    .message.has-menu {
-        padding-right: 52px;
-    }
+    .message.has-menu { padding-right: 52px; }
 
     .message-row.my .message {
         background: var(--message-me-bg);
@@ -701,9 +643,7 @@
         white-space: pre-wrap;
     }
 
-    .file {
-        margin-top: 12px;
-    }
+    .file { margin-top: 12px; }
 
     .file a {
         display: inline-flex;
@@ -719,9 +659,7 @@
         transition: 0.18s ease;
     }
 
-    .file a:hover {
-        background: var(--file-link-hover-bg);
-    }
+    .file a:hover { background: var(--file-link-hover-bg); }
 
     img.chat-image {
         max-width: 320px;
@@ -736,9 +674,7 @@
         transition: 0.18s ease;
     }
 
-    img.chat-image:hover {
-        transform: scale(1.01);
-    }
+    img.chat-image:hover { transform: scale(1.01); }
 
     audio {
         width: min(320px, 100%);
@@ -766,31 +702,13 @@
         gap: 10px;
     }
 
-    .admin-select {
-        max-width: 340px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        border: 1px solid var(--field-border);
-        background: var(--field-bg);
-        color: var(--text);
-        outline: none;
-        transition: 0.18s ease;
-    }
-
-    .admin-select:focus {
-        border-color: #93c5fd;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
-    }
-
     .composer {
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
-    .hidden-file-input {
-        display: none;
-    }
+    .hidden-file-input { display: none; }
 
     .attach-btn {
         width: 50px;
@@ -810,10 +728,7 @@
         flex-shrink: 0;
     }
 
-    .attach-btn svg {
-        width: 20px;
-        height: 20px;
-    }
+    .attach-btn svg { width: 20px; height: 20px; }
 
     .attach-btn:hover {
         transform: translateY(-1px);
@@ -838,9 +753,7 @@
         box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
     }
 
-    #messageInput::placeholder {
-        color: var(--text-faint);
-    }
+    #messageInput::placeholder { color: var(--text-faint); }
 
     #messageInput:focus {
         border-color: #93c5fd;
@@ -877,9 +790,7 @@
         background: linear-gradient(135deg, #1d4ed8, #2563eb);
     }
 
-    .send-icon-btn:active {
-        transform: translateY(0);
-    }
+    .send-icon-btn:active { transform: translateY(0); }
 
     .selected-file-name {
         margin-left: 4px;
@@ -894,10 +805,47 @@
         margin-top: 6px;
     }
 
-    .dialogs::-webkit-scrollbar,
-    .chat::-webkit-scrollbar {
-        width: 10px;
+    .scroll-to-bottom-btn {
+        position: absolute;
+        right: 22px;
+        bottom: 96px;
+        width: 52px;
+        height: 52px;
+        border: 1px solid var(--scroll-btn-border);
+        border-radius: 18px;
+        background: var(--scroll-btn-bg);
+        color: var(--blue);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: var(--scroll-btn-shadow);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        transition: 0.18s ease;
+        z-index: 4;
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+        pointer-events: none;
     }
+
+    .scroll-to-bottom-btn.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    .scroll-to-bottom-btn:hover {
+        transform: translateY(-1px) scale(1.02);
+    }
+
+    .scroll-to-bottom-btn svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .dialogs::-webkit-scrollbar,
+    .chat::-webkit-scrollbar { width: 10px; }
 
     .dialogs::-webkit-scrollbar-thumb,
     .chat::-webkit-scrollbar-thumb {
@@ -908,9 +856,7 @@
     }
 
     .dialogs::-webkit-scrollbar-track,
-    .chat::-webkit-scrollbar-track {
-        background: transparent;
-    }
+    .chat::-webkit-scrollbar-track { background: transparent; }
 
     .toast-container {
         position: fixed;
@@ -938,6 +884,7 @@
         opacity: 0;
         transition: 0.22s ease;
         pointer-events: auto;
+        text-decoration: none;
     }
 
     .toast.show {
@@ -979,9 +926,7 @@
         -webkit-backdrop-filter: blur(6px);
     }
 
-    .image-viewer.open {
-        display: flex;
-    }
+    .image-viewer.open { display: flex; }
 
     .image-viewer-content {
         position: relative;
@@ -1016,36 +961,20 @@
         box-shadow: 0 10px 24px rgba(0,0,0,0.22);
     }
 
-    .image-viewer-close:hover {
-        transform: scale(1.04);
-    }
+    .image-viewer-close:hover { transform: scale(1.04); }
 
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(6px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     @media (max-width: 1100px) {
-        .sidebar {
-            width: 320px;
-            min-width: 320px;
-        }
-
-        .message {
-            max-width: 76%;
-        }
+        .sidebar { width: 320px; min-width: 320px; }
+        .message { max-width: 76%; }
     }
 
     @media (max-width: 768px) {
-        .app {
-            flex-direction: column;
-        }
+        .app { flex-direction: column; }
 
         .sidebar {
             width: 100%;
@@ -1055,19 +984,9 @@
             border-bottom: 1px solid var(--line);
         }
 
-        body.chat-open .sidebar {
-            display: none;
-        }
-
-        .main {
-            display: none;
-            height: 100dvh;
-        }
-
-        body.chat-open .main {
-            display: flex;
-            height: 100dvh;
-        }
+        body.chat-open .sidebar { display: none; }
+        .main { display: none; height: 100dvh; }
+        body.chat-open .main { display: flex; height: 100dvh; }
 
         .back-link {
             display: inline-flex;
@@ -1075,10 +994,7 @@
             justify-content: center;
         }
 
-        .sidebar-header {
-            padding: 16px 14px 12px;
-            font-size: 18px;
-        }
+        .sidebar-header { padding: 16px 14px 12px; font-size: 18px; }
 
         .settings-trigger {
             width: 38px;
@@ -1086,74 +1002,21 @@
             border-radius: 12px;
         }
 
-        .settings-menu {
-            width: min(240px, calc(100vw - 32px));
-        }
-
-        .search-box {
-            top: 67px;
-            padding: 12px 14px;
-        }
-
-        .search-box input {
-            padding: 11px 14px;
-            border-radius: 14px;
-        }
-
-        .dialogs {
-            padding: 8px;
-        }
-
-        .dialog-item {
-            padding: 12px;
-            border-radius: 16px;
-            margin-bottom: 8px;
-        }
-
-        .dialog-avatar {
-            width: 38px;
-            height: 38px;
-            font-size: 14px;
-        }
-
-        .dialog-name {
-            font-size: 14px;
-        }
-
-        .dialog-preview {
-            font-size: 12px;
-        }
-
-        .dialog-time {
-            font-size: 11px;
-        }
-
-        .main-header {
-            padding: 14px 14px;
-        }
-
-        .main-title {
-            font-size: 20px;
-        }
-
-        .main-subtitle {
-            font-size: 12px;
-        }
-
-        .chat {
-            padding: 12px 10px 10px;
-            gap: 10px;
-        }
-
-        .message {
-            max-width: 90%;
-            font-size: 14px;
-            padding: 12px 13px;
-        }
-
-        .input-area {
-            padding: 8px 10px max(8px, env(safe-area-inset-bottom, 0px));
-        }
+        .settings-menu { width: min(240px, calc(100vw - 32px)); }
+        .search-box { top: 67px; padding: 12px 14px; }
+        .search-box input { padding: 11px 14px; border-radius: 14px; }
+        .dialogs { padding: 8px; }
+        .dialog-item { padding: 12px; border-radius: 16px; margin-bottom: 8px; }
+        .dialog-avatar { width: 38px; height: 38px; font-size: 14px; }
+        .dialog-name { font-size: 14px; }
+        .dialog-preview { font-size: 12px; }
+        .dialog-time { font-size: 11px; }
+        .main-header { padding: 14px 14px; }
+        .main-title { font-size: 20px; }
+        .main-subtitle { font-size: 12px; }
+        .chat { padding: 12px 10px 10px; gap: 10px; }
+        .message { max-width: 90%; font-size: 14px; padding: 12px 13px; }
+        .input-area { padding: 8px 10px max(8px, env(safe-area-inset-bottom, 0px)); }
 
         .attach-btn,
         .send-icon-btn {
@@ -1163,19 +1026,9 @@
             border-radius: 14px;
         }
 
-        .send-icon-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        #messageInput {
-            min-height: 46px;
-            height: 46px;
-        }
-
-        .image-viewer {
-            padding: 12px;
-        }
+        .send-icon-btn svg { width: 20px; height: 20px; }
+        #messageInput { min-height: 46px; height: 46px; }
+        .image-viewer { padding: 12px; }
 
         .image-viewer-close {
             top: 8px;
@@ -1183,6 +1036,14 @@
             width: 38px;
             height: 38px;
             font-size: 20px;
+        }
+
+        .scroll-to-bottom-btn {
+            right: 12px;
+            bottom: 84px;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
         }
     }
 </style>
@@ -1279,8 +1140,8 @@
 
             <div class="chat" id="chat">
                 {% for message in messages %}
-                    <div class="message-row {% if message.real_sender == request.user %}my{% else %}other{% endif %}" data-message-id="{{ message.id }}">
-                        <div class="message">
+                    <div class="message-row {% if message.real_sender == request.user %}my{% else %}other{% endif %}" data-message-id="{{ message.id }}" data-displayed-sender-id="{{ message.displayed_sender.id|default:'' }}">
+                        <div class="message {% if request.user.role == 'admin' or message.real_sender == request.user %}has-menu{% endif %}">
                             <div class="meta">
                                 {{ message.displayed_sender.username }} • {{ message.created_at|time }}
                             </div>
@@ -1292,14 +1153,14 @@
                             {% for attachment in message.attachments.all %}
                                 <div class="file">
                                     {% if attachment.is_image %}
-                                        <img src="{{ attachment.file.url }}" class="chat-image" alt="{{ attachment.filename }}">
+                                        <img src="{{ attachment.file.url }}" class="chat-image" alt="{{ attachment.filename }}" loading="lazy">
                                     {% elif attachment.is_audio %}
                                         <div>{{ attachment.filename }}</div>
-                                        <audio controls>
+                                        <audio controls preload="metadata">
                                             <source src="{{ attachment.file.url }}">
                                         </audio>
                                     {% else %}
-                                        <a href="{{ attachment.file.url }}" target="_blank">📎 {{ attachment.filename }}</a>
+                                        <a href="{{ attachment.file.url }}" target="_blank" rel="noopener noreferrer">📎 {{ attachment.filename }}</a>
                                     {% endif %}
                                 </div>
                             {% endfor %}
@@ -1308,19 +1169,15 @@
                 {% endfor %}
             </div>
 
+            <button type="button" class="scroll-to-bottom-btn" id="scrollToBottomBtn" aria-label="Прокрутить вниз" title="Вниз">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v12m0 0l-5-5m5 5l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+
             <div class="input-area">
                 <form method="post" enctype="multipart/form-data" id="messageForm">
                     {% csrf_token %}
-
-                    {% if request.user.role == 'admin' %}
-                        <select name="displayed_sender" class="admin-select">
-                            {% for member in members %}
-                                <option value="{{ member.user.id }}">
-                                    {{ member.user.username }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    {% endif %}
 
                     <div class="composer">
                         <label for="fileInput" class="attach-btn" title="Прикрепить файл">
@@ -1365,7 +1222,7 @@
     </div>
 </div>
 
-<audio id="notificationSound" preload="auto">
+<audio id="notificationSound" preload="auto" playsinline>
     <source src="{% static 'sounds/notification.mp3' %}" type="audio/mpeg">
 </audio>
 
@@ -1383,6 +1240,15 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function applySavedTheme() {
@@ -1422,7 +1288,7 @@ const defaultPageTitle = document.title;
 let soundUnlocked = false;
 let dialogsInitialized = false;
 let previousUnreadMap = {};
-let previousDialogSnapshot = {};
+let previousDialogSnapshotString = '';
 let titleBlinkInterval = null;
 let titleBlinkCount = 0;
 
@@ -1459,16 +1325,21 @@ document.addEventListener('click', function(event) {
 function unlockNotificationSound() {
     if (!notificationSound || soundUnlocked) return;
 
-    const playPromise = notificationSound.play();
+    notificationSound.muted = true;
+    notificationSound.currentTime = 0;
 
+    const playPromise = notificationSound.play();
     if (playPromise !== undefined) {
         playPromise
             .then(() => {
                 notificationSound.pause();
                 notificationSound.currentTime = 0;
+                notificationSound.muted = false;
                 soundUnlocked = true;
             })
-            .catch(() => {});
+            .catch(() => {
+                notificationSound.muted = false;
+            });
     }
 }
 
@@ -1483,11 +1354,16 @@ function playNotificationSound() {
     if (!notificationSound) return;
     if (!document.hidden) return;
 
-    notificationSound.currentTime = 0;
-
-    const playPromise = notificationSound.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(() => {});
+    try {
+        const sound = notificationSound.cloneNode(true);
+        sound.volume = 1;
+        sound.currentTime = 0;
+        const playPromise = sound.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {});
+        }
+    } catch (error) {
+        console.error(error);
     }
 }
 
@@ -1498,10 +1374,14 @@ function showToast(title, text, dialogName, dialogUrl) {
     toast.className = 'toast';
     toast.href = dialogUrl || '#';
 
+    const safeTitle = escapeHtml(title || 'Новое сообщение');
+    const safeText = escapeHtml(text || 'Новое сообщение');
+    const safeDialogName = dialogName ? escapeHtml(dialogName) : '';
+
     toast.innerHTML = `
-        <div class="toast-title">${title}</div>
-        <div class="toast-text">${text || 'Новое сообщение'}</div>
-        ${dialogName ? `<div class="toast-dialog">${dialogName}</div>` : ''}
+        <div class="toast-title">${safeTitle}</div>
+        <div class="toast-text">${safeText}</div>
+        ${safeDialogName ? `<div class="toast-dialog">${safeDialogName}</div>` : ''}
     `;
 
     toastContainer.appendChild(toast);
@@ -1576,9 +1456,9 @@ function showBrowserNotification(dialogName, messageText, dialogUrl) {
     }
 }
 
-['click', 'keydown', 'touchstart'].forEach(eventName => {
-    document.addEventListener(eventName, unlockNotificationSound, { once: true });
-    document.addEventListener(eventName, requestBrowserNotificationPermission, { once: true });
+['click', 'keydown', 'touchstart', 'pointerdown'].forEach(eventName => {
+    document.addEventListener(eventName, unlockNotificationSound, { once: true, passive: true });
+    document.addEventListener(eventName, requestBrowserNotificationPermission, { once: true, passive: true });
 });
 
 document.addEventListener('visibilitychange', function() {
@@ -1587,22 +1467,20 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
-if (searchInput) {
-    searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        const items = document.querySelectorAll('.dialog-item');
+function applyDialogFilter() {
+    if (!searchInput) return;
+    const query = searchInput.value.toLowerCase().trim();
+    const items = document.querySelectorAll('.dialog-item');
 
-        items.forEach(item => {
-            const name = item.dataset.name || '';
-            const preview = item.dataset.preview || '';
-
-            if (name.includes(query) || preview.includes(query)) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
+    items.forEach(item => {
+        const name = item.dataset.name || '';
+        const preview = item.dataset.preview || '';
+        item.style.display = (name.includes(query) || preview.includes(query)) ? 'block' : 'none';
     });
+}
+
+if (searchInput) {
+    searchInput.addEventListener('input', applyDialogFilter);
 }
 
 function openImageViewer(src, alt) {
@@ -1647,6 +1525,47 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+function renderDialogItem(d) {
+    const unread = Number(d.unread || 0);
+    const el = document.createElement('a');
+    el.href = `/dialogs/${d.id}/`;
+    el.className = 'dialog-item';
+
+    {% if current_dialog %}
+    if (d.id === {{ current_dialog.id }}) {
+        el.classList.add('active');
+    }
+    {% endif %}
+
+    if (unread > 0) {
+        el.classList.add('has-new');
+    }
+
+    const safeName = escapeHtml(d.name || 'Чат');
+    const safeLastMessage = escapeHtml(d.last_message || 'Нет сообщений');
+    const safeLastTime = escapeHtml(d.last_message_time || '');
+    const avatarLetter = safeName.charAt(0).toUpperCase() || '?';
+
+    el.setAttribute('data-name', String(d.name || '').toLowerCase());
+    el.setAttribute('data-preview', String(d.last_message || '').toLowerCase());
+
+    el.innerHTML = `
+        <div class="dialog-top">
+            <div class="dialog-left">
+                <div class="dialog-avatar">${avatarLetter}</div>
+                <div class="dialog-name">${safeName}</div>
+            </div>
+            <div class="dialog-right">
+                ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
+                <div class="dialog-time">${safeLastTime}</div>
+            </div>
+        </div>
+        <div class="dialog-preview">${safeLastMessage}</div>
+    `;
+
+    return el;
+}
+
 function loadDialogs() {
     fetch('/api/dialogs/')
         .then(res => res.json())
@@ -1655,21 +1574,21 @@ function loadDialogs() {
             if (!list) return;
 
             const dialogs = data.dialogs || [];
+            const snapshotString = JSON.stringify(dialogs.map(d => ({
+                id: d.id,
+                unread: d.unread,
+                last_message: d.last_message,
+                last_message_time: d.last_message_time,
+                name: d.name
+            })));
+
             let shouldPlaySound = false;
             let totalUnread = 0;
             const newUnreadMap = {};
-            const newSnapshot = {};
-
-            list.innerHTML = '';
 
             dialogs.forEach(d => {
                 const unread = Number(d.unread || 0);
                 newUnreadMap[d.id] = unread;
-                newSnapshot[d.id] = {
-                    unread,
-                    last_message: d.last_message || '',
-                    name: d.name || 'Чат'
-                };
                 totalUnread += unread;
 
                 const previousUnread = previousUnreadMap[d.id] || 0;
@@ -1677,68 +1596,36 @@ function loadDialogs() {
 
                 if (isNewUnread) {
                     shouldPlaySound = true;
-
                     const text = d.last_message || 'У вас новое сообщение';
                     const dialogUrl = `/dialogs/${d.id}/`;
-
                     showToast(d.name || 'Новый диалог', text, 'Нажми, чтобы открыть', dialogUrl);
                     showBrowserNotification(d.name || 'Новое сообщение', text, dialogUrl);
                 }
-
-                const el = document.createElement('a');
-                el.href = `/dialogs/${d.id}/`;
-                el.className = 'dialog-item';
-
-                {% if current_dialog %}
-                if (d.id === {{ current_dialog.id }}) {
-                    el.classList.add('active');
-                }
-                {% endif %}
-
-                if (unread > 0) {
-                    el.classList.add('has-new');
-                }
-
-                el.setAttribute('data-name', (d.name || '').toLowerCase());
-                el.setAttribute('data-preview', (d.last_message || '').toLowerCase());
-
-                el.innerHTML = `
-                    <div class="dialog-top">
-                        <div class="dialog-left">
-                            <div class="dialog-avatar">${(d.name || '?').charAt(0).toUpperCase()}</div>
-                            <div class="dialog-name">${d.name}</div>
-                        </div>
-                        <div class="dialog-right">
-                            ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
-                            <div class="dialog-time">${d.last_message_time || ''}</div>
-                        </div>
-                    </div>
-                    <div class="dialog-preview">
-                        ${d.last_message || 'Нет сообщений'}
-                    </div>
-                `;
-
-                list.appendChild(el);
             });
+
+            if (snapshotString !== previousDialogSnapshotString) {
+                list.innerHTML = '';
+                dialogs.forEach(d => list.appendChild(renderDialogItem(d)));
+                previousDialogSnapshotString = snapshotString;
+                applyDialogFilter();
+
+                if (typeof syncMainDialogTitle === 'function') {
+                    syncMainDialogTitle();
+                }
+            }
 
             if (shouldPlaySound) {
                 playNotificationSound();
             }
 
             if (totalUnread > 0) {
-                document.title = `(${totalUnread}) ${defaultPageTitle}`;
                 startTitleBlink(totalUnread);
             } else {
                 stopTitleBlink();
             }
 
             previousUnreadMap = newUnreadMap;
-            previousDialogSnapshot = newSnapshot;
             dialogsInitialized = true;
-
-            if (typeof syncMainDialogTitle === 'function') {
-                syncMainDialogTitle();
-            }
         })
         .catch(err => console.error(err));
 }
@@ -1754,24 +1641,47 @@ const dialogId = {{ current_dialog.id }};
 const messageInput = document.getElementById('messageInput');
 const messageForm = document.getElementById('messageForm');
 const fileInput = document.getElementById('fileInput');
-const displayedSenderSelect = messageForm ? messageForm.querySelector('select[name="displayed_sender"]') : null;
+const displayedSenderSelect = null;
 const currentUserId = {{ request.user.id }};
 const currentUserRole = '{{ request.user.role }}';
 const isAdmin = {% if request.user.role == 'admin' %}true{% else %}false{% endif %};
 const typingIndicator = document.getElementById('typingIndicator');
 const mainDialogTitle = document.getElementById('mainDialogTitle');
 const dialogsList = document.getElementById('dialogsList');
+const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
 
 let isUserNearBottom = true;
 let lastRenderedMessageSignature = null;
 let typingIndicatorTimeout = null;
 let typingThrottleTimeout = null;
 
+function updateScrollButtonVisibility() {
+    if (!chat || !scrollToBottomBtn) return;
+    scrollToBottomBtn.classList.toggle('visible', !isUserNearBottom && chat.scrollHeight > chat.clientHeight + 100);
+}
+
+function scrollChatToBottom(force = false) {
+    if (!chat) return;
+    if (force) {
+        chat.scrollTop = chat.scrollHeight;
+    } else {
+        chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+    }
+    isUserNearBottom = true;
+    updateScrollButtonVisibility();
+}
+
 if (chat) {
     chat.addEventListener('scroll', () => {
         const threshold = 100;
-        isUserNearBottom =
-            chat.scrollHeight - chat.scrollTop - chat.clientHeight < threshold;
+        isUserNearBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < threshold;
+        updateScrollButtonVisibility();
+    });
+}
+
+if (scrollToBottomBtn) {
+    scrollToBottomBtn.addEventListener('click', function() {
+        scrollChatToBottom();
     });
 }
 
@@ -1782,7 +1692,6 @@ function getActiveDialogDisplayName() {
 
 function syncMainDialogTitle() {
     if (!mainDialogTitle) return;
-
     const displayName = getActiveDialogDisplayName();
     if (displayName) {
         mainDialogTitle.textContent = displayName;
@@ -1817,8 +1726,7 @@ socket.onmessage = function(e) {
     if (data.event_type === 'message') {
         const msg = data.message;
 
-        msg.sender =
-        ['student', 'parent'].includes(currentUserRole)
+        msg.sender = ['student', 'parent'].includes(currentUserRole)
             ? (msg.sender_display_name || msg.sender_username)
             : msg.sender_username;
 
@@ -1829,7 +1737,7 @@ socket.onmessage = function(e) {
         const existing = document.querySelector(`[data-message-id="${msg.id}"]`);
         if (existing) return;
 
-        const lastMessageEl = chat.lastElementChild;
+        const lastMessageEl = chat ? chat.lastElementChild : null;
         let prevMsg = null;
 
         if (lastMessageEl) {
@@ -1840,10 +1748,14 @@ socket.onmessage = function(e) {
         }
 
         const wasNearBottom = isUserNearBottom;
-        chat.appendChild(renderMessage(msg, prevMsg));
+        if (chat) {
+            chat.appendChild(renderMessage(msg, prevMsg));
+        }
 
         if (wasNearBottom) {
-            chat.scrollTop = chat.scrollHeight;
+            scrollChatToBottom(true);
+        } else {
+            updateScrollButtonVisibility();
         }
 
         if (!msg.is_me) {
@@ -1863,17 +1775,10 @@ socket.onerror = function(e) {
 };
 
 function sendTyping() {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-        return;
-    }
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    if (typingThrottleTimeout) return;
 
-    if (typingThrottleTimeout) {
-        return;
-    }
-
-    socket.send(JSON.stringify({
-        type: 'typing'
-    }));
+    socket.send(JSON.stringify({ type: 'typing' }));
 
     typingThrottleTimeout = setTimeout(() => {
         typingThrottleTimeout = null;
@@ -1914,9 +1819,7 @@ document.addEventListener('click', function() {
 });
 
 function deleteMessage(messageId) {
-    if (!confirm('Удалить сообщение?')) {
-        return;
-    }
+    if (!confirm('Удалить сообщение?')) return;
 
     fetch(`/api/messages/${messageId}/delete/`, {
         method: 'POST',
@@ -1940,12 +1843,9 @@ function editMessage(messageId, encodedText) {
     const currentText = decodeURIComponent(encodedText || '');
     const newText = prompt('Редактировать сообщение:', currentText);
 
-    if (newText === null) {
-        return;
-    }
+    if (newText === null) return;
 
     const trimmedText = newText.trim();
-
     if (!trimmedText) {
         alert('Текст сообщения не может быть пустым');
         return;
@@ -1974,28 +1874,22 @@ function editMessage(messageId, encodedText) {
 }
 
 function renderMessage(msg, prevMsg = null) {
-    let row = document.createElement('div');
+    const row = document.createElement('div');
     row.className = 'message-row ' + (msg.is_me ? 'my' : 'other');
     row.setAttribute('data-message-id', msg.id);
     row.setAttribute('data-displayed-sender-id', msg.displayed_sender_id || '');
 
-    let message = document.createElement('div');
+    const message = document.createElement('div');
     message.className = 'message';
 
-    const isSameSender =
-        prevMsg &&
-        prevMsg.displayed_sender_id === msg.displayed_sender_id &&
-        prevMsg.is_me === msg.is_me;
-
+    const isSameSender = prevMsg && prevMsg.displayed_sender_id === msg.displayed_sender_id && prevMsg.is_me === msg.is_me;
     if (msg.can_edit || msg.can_delete) {
         message.classList.add('has-menu');
     }
 
     let menuHtml = '';
-
     if (msg.can_edit || msg.can_delete) {
         const encodedText = encodeURIComponent(msg.text || '');
-
         menuHtml = `
             <div class="message-menu-wrapper">
                 <button type="button" class="menu-trigger" onclick="toggleMessageMenu(event, ${msg.id})">⋯</button>
@@ -2017,23 +1911,42 @@ function renderMessage(msg, prevMsg = null) {
 
     let html = `
         ${menuHtml}
-        ${!isSameSender ? `<div class="meta">${msg.sender} • ${msg.time}</div>` : ''}
-        ${msg.text ? `<div class="message-text">${msg.text}</div>` : ''}
+        ${!isSameSender ? `<div class="meta">${escapeHtml(msg.sender)} • ${escapeHtml(msg.time)}</div>` : ''}
+        ${msg.text ? `<div class="message-text">${escapeHtml(msg.text)}</div>` : ''}
     `;
 
     (msg.attachments || []).forEach(a => {
+        const safeUrl = escapeHtml(a.url);
+        const safeName = escapeHtml(a.name);
+
         if (a.is_image) {
-            html += `<div class="file"><img src="${a.url}" class="chat-image" alt="${a.name}"></div>`;
+            html += `<div class="file"><img src="${safeUrl}" class="chat-image" alt="${safeName}" loading="lazy"></div>`;
         } else if (a.is_audio) {
-            html += `<div class="file"><div>${a.name}</div><audio controls src="${a.url}"></audio></div>`;
+            html += `<div class="file"><div>${safeName}</div><audio controls preload="metadata" src="${safeUrl}"></audio></div>`;
         } else {
-            html += `<div class="file"><a href="${a.url}" target="_blank">📎 ${a.name}</a></div>`;
+            html += `<div class="file"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">📎 ${safeName}</a></div>`;
         }
     });
 
     message.innerHTML = html;
     row.appendChild(message);
     return row;
+}
+
+function buildMessagesSignature(messages) {
+    return messages.map(msg => JSON.stringify({
+        id: msg.id,
+        text: msg.text || '',
+        time: msg.time || '',
+        sender: msg.sender || '',
+        displayed_sender_id: msg.displayed_sender_id || '',
+        attachments: (msg.attachments || []).map(a => ({
+            url: a.url,
+            name: a.name,
+            is_image: !!a.is_image,
+            is_audio: !!a.is_audio
+        }))
+    })).join('|');
 }
 
 function loadMessages() {
@@ -2046,14 +1959,14 @@ function loadMessages() {
             if (!chat) return;
 
             const messages = data.messages || [];
-            const newSignature = messages.map(msg => `${msg.id}:${msg.text || ''}:${msg.attachments.length}`).join('|');
+            const newSignature = buildMessagesSignature(messages);
 
             if (lastRenderedMessageSignature === newSignature) {
+                updateScrollButtonVisibility();
                 return;
             }
 
             const wasNearBottom = isUserNearBottom;
-
             chat.innerHTML = '';
 
             messages.forEach((msg, index) => {
@@ -2064,7 +1977,9 @@ function loadMessages() {
             lastRenderedMessageSignature = newSignature;
 
             if (wasNearBottom) {
-                chat.scrollTop = chat.scrollHeight;
+                scrollChatToBottom(true);
+            } else {
+                updateScrollButtonVisibility();
             }
         })
         .catch(err => console.error(err));
@@ -2074,22 +1989,14 @@ function sendMessageAjax() {
     const text = messageInput ? messageInput.value.trim() : '';
     const hasFile = fileInput && fileInput.files.length > 0;
 
-    if (!text && !hasFile) {
-        return;
-    }
+    if (!text && !hasFile) return;
 
     if (hasFile) {
         const formData = new FormData();
         formData.append('text', text);
 
-        if (fileInput.files.length > 0) {
-            for (const file of fileInput.files) {
-                formData.append('file', file);
-            }
-        }
-
-        if (displayedSenderSelect) {
-            formData.append('displayed_sender', displayedSenderSelect.value);
+        for (const file of fileInput.files) {
+            formData.append('file', file);
         }
 
         fetch(`/api/dialogs/${dialogId}/send/`, {
@@ -2121,15 +2028,14 @@ function sendMessageAjax() {
             lastRenderedMessageSignature = null;
             loadMessages();
             loadDialogs();
+            scrollChatToBottom(true);
         })
         .catch(err => console.error(err));
 
         return;
     }
 
-    if (!text) {
-        return;
-    }
+    if (!text) return;
 
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
@@ -2142,15 +2048,12 @@ function sendMessageAjax() {
             autoResizeTextarea();
         }
 
+        scrollChatToBottom(true);
         return;
     }
 
     const formData = new FormData();
     formData.append('text', text);
-
-    if (displayedSenderSelect) {
-        formData.append('displayed_sender', displayedSenderSelect.value);
-    }
 
     fetch(`/api/dialogs/${dialogId}/send/`, {
         method: 'POST',
@@ -2172,6 +2075,7 @@ function sendMessageAjax() {
         lastRenderedMessageSignature = null;
         loadMessages();
         loadDialogs();
+        scrollChatToBottom(true);
     })
     .catch(err => console.error(err));
 }
@@ -2210,7 +2114,10 @@ if (dialogsList) {
     dialogsObserver.observe(dialogsList, { childList: true, subtree: true });
 }
 
-window.addEventListener('load', syncMainDialogTitle);
+window.addEventListener('load', function() {
+    syncMainDialogTitle();
+    scrollChatToBottom(true);
+});
 
 if (messageInput && messageForm) {
     messageInput.addEventListener('input', function() {
@@ -2242,11 +2149,25 @@ if (chat) {
         e.preventDefault();
 
         const files = e.dataTransfer.files;
+        if (!files || !files.length || !fileInput) return;
 
-        if (files.length > 0) {
-            fileInput.files = files;
-            sendMessageAjax();
+        const dt = new DataTransfer();
+        for (const file of files) {
+            dt.items.add(file);
         }
+
+        fileInput.files = dt.files;
+
+        if (selectedFileName) {
+            if (dt.files.length === 1) {
+                selectedFileName.textContent = 'Файл: ' + dt.files[0].name;
+            } else {
+                selectedFileName.textContent = 'Файлов выбрано: ' + dt.files.length;
+            }
+            selectedFileName.classList.add('has-file');
+        }
+
+        sendMessageAjax();
     });
 }
 </script>
@@ -2267,12 +2188,20 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
-async function registerServiceWorker() {
+async function getServiceWorkerRegistration() {
     if (!('serviceWorker' in navigator)) {
         throw new Error('Service Worker не поддерживается');
     }
 
-    return await navigator.serviceWorker.register('/service-worker.js');
+    let registration = await navigator.serviceWorker.getRegistration('/service-worker.js');
+    if (!registration) {
+        registration = await navigator.serviceWorker.getRegistration();
+    }
+    if (!registration) {
+        registration = await navigator.serviceWorker.register('/service-worker.js');
+    }
+
+    return registration;
 }
 
 async function saveSubscriptionOnServer(subscription) {
@@ -2303,14 +2232,7 @@ async function updatePushStatusLabel() {
     }
 
     try {
-        const registration = await navigator.serviceWorker.getRegistration('/service-worker.js') || await navigator.serviceWorker.getRegistration();
-        if (!registration) {
-            pushStatusLabel.textContent = 'Выключены';
-            pushStatusLabel.classList.remove('status-on');
-            pushStatusLabel.classList.add('status-off');
-            return;
-        }
-
+        const registration = await getServiceWorkerRegistration();
         const subscription = await registration.pushManager.getSubscription();
         const isEnabled = Notification.permission === 'granted' && !!subscription;
 
@@ -2342,7 +2264,7 @@ async function enablePushNotifications() {
             return;
         }
 
-        const registration = await registerServiceWorker();
+        const registration = await getServiceWorkerRegistration();
 
         let permission = Notification.permission;
         if (permission !== 'granted') {
@@ -2376,7 +2298,7 @@ async function enablePushNotifications() {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js')
+        getServiceWorkerRegistration()
             .then(() => updatePushStatusLabel())
             .catch(err => {
                 console.error('Ошибка регистрации service worker:', err);

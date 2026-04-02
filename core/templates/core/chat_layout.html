@@ -882,11 +882,16 @@
     }
 
     .selected-file-name {
-        margin-top: 6px;
         margin-left: 4px;
         font-size: 13px;
         color: var(--text-soft);
-        min-height: 18px;
+        line-height: 1.2;
+        display: none;
+    }
+
+    .selected-file-name.has-file {
+        display: block;
+        margin-top: 6px;
     }
 
     .dialogs::-webkit-scrollbar,
@@ -2108,6 +2113,7 @@ function sendMessageAjax() {
 
             if (selectedFileName) {
                 selectedFileName.textContent = '';
+                selectedFileName.classList.remove('has-file');
             }
 
             lastRenderedMessageSignature = null;
@@ -2180,8 +2186,10 @@ if (fileInput && selectedFileName) {
     fileInput.addEventListener('change', function() {
         if (fileInput.files && fileInput.files.length > 0) {
             selectedFileName.textContent = 'Файл: ' + fileInput.files[0].name;
+            selectedFileName.classList.add('has-file');
         } else {
             selectedFileName.textContent = '';
+            selectedFileName.classList.remove('has-file');
         }
     });
 }

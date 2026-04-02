@@ -17,6 +17,7 @@ from .models import PushSubscription
 typing_users = {}
 TYPING_TIMEOUT_SECONDS = 3
 
+
 def build_dialogs_for_user(user):
     def get_dialog_display_name(viewer, other_user):
         if viewer.role in ['student', 'parent']:
@@ -90,6 +91,7 @@ def dialog_list(request):
         'members': [],
         'vapid_public_key': settings.VAPID_PUBLIC_KEY,
     })
+
 
 def get_dialog_display_name_for_user(viewer, dialog):
     members = dialog.dialogmember_set.select_related('user')
@@ -186,9 +188,7 @@ def get_messages(request, dialog_id):
         data.append({
             'id': m.id,
             'text': m.text,
-
             'sender': get_sender_name(request.user, m.displayed_sender),
-
             'displayed_sender_id': m.displayed_sender_id,
             'real_sender_id': m.real_sender_id,
             'is_me': m.real_sender_id == request.user.id,
@@ -200,10 +200,12 @@ def get_messages(request, dialog_id):
 
     return JsonResponse({'messages': data})
 
+
 @login_required
 def get_dialogs(request):
     dialogs = build_dialogs_for_user(request.user)
     return JsonResponse({'dialogs': dialogs})
+
 
 @login_required
 @require_POST
@@ -214,8 +216,8 @@ def send_message(request, dialog_id):
     if not is_member:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
-    text = request.POST.get('text')
-    uploaded_file = request.FILES.get('file')
+    text = (request.POST.get('text') or '').strip()
+    uploaded_files = request.FILES.getlist('file')
 
     displayed_user = request.user
 
@@ -226,17 +228,17 @@ def send_message(request, dialog_id):
             if member:
                 displayed_user = member.user
 
-    if not text and not uploaded_file:
+    if not text and not uploaded_files:
         return JsonResponse({'error': 'empty_message'}, status=400)
 
     message = Message.objects.create(
         dialog=dialog,
         real_sender=request.user,
         displayed_sender=displayed_user,
-        text=text or ''
+        text=text
     )
 
-    if uploaded_file:
+    for uploaded_file in uploaded_files:
         Attachment.objects.create(
             message=message,
             file=uploaded_file
@@ -263,6 +265,7 @@ def send_message(request, dialog_id):
         }
     })
 
+
 @login_required
 @require_POST
 def delete_message(request, message_id):
@@ -286,6 +289,7 @@ def delete_message(request, message_id):
 
     message.delete()
     return JsonResponse({'ok': True})
+
 
 @login_required
 @require_POST
@@ -324,6 +328,7 @@ def edit_message(request, message_id):
         }
     })
 
+
 def get_user_status(user):
     if not user.last_seen:
         return 'был давно'
@@ -340,6 +345,7 @@ def get_user_status(user):
     else:
         return 'не в сети'
 
+
 @require_POST
 @login_required
 def typing(request, dialog_id):
@@ -355,6 +361,7 @@ def typing(request, dialog_id):
     }
 
     return JsonResponse({'status': 'ok'})
+
 
 @login_required
 def get_typing(request, dialog_id):
@@ -379,6 +386,7 @@ def get_typing(request, dialog_id):
         return JsonResponse({'typing': None})
 
     return JsonResponse({'typing': username})
+
 
 @login_required
 @require_POST

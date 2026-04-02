@@ -1338,7 +1338,7 @@
                         </button>
                     </div>
 
-                    <input type="file" name="file" id="fileInput" class="hidden-file-input">
+                    <input type="file" name="file" id="fileInput" class="hidden-file-input" multiple accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
                     <div id="selectedFileName" class="selected-file-name"></div>
                 </form>
             </div>
@@ -2083,7 +2083,9 @@ function sendMessageAjax() {
         formData.append('text', text);
 
         if (fileInput.files.length > 0) {
-            formData.append('file', fileInput.files[0]);
+            for (const file of fileInput.files) {
+                formData.append('file', file);
+            }
         }
 
         if (displayedSenderSelect) {
@@ -2185,7 +2187,11 @@ const selectedFileName = document.getElementById('selectedFileName');
 if (fileInput && selectedFileName) {
     fileInput.addEventListener('change', function() {
         if (fileInput.files && fileInput.files.length > 0) {
-            selectedFileName.textContent = 'Файл: ' + fileInput.files[0].name;
+            if (fileInput.files.length === 1) {
+                selectedFileName.textContent = 'Файл: ' + fileInput.files[0].name;
+            } else {
+                selectedFileName.textContent = 'Файлов выбрано: ' + fileInput.files.length;
+            }
             selectedFileName.classList.add('has-file');
         } else {
             selectedFileName.textContent = '';

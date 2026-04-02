@@ -547,7 +547,7 @@ const selectedFilesPreview = document.getElementById('selectedFilesPreview');
 const draftStorageKey = `chat_draft_${dialogId}`;
 
 let isUserNearBottom = true;
-let lastRenderedMessageSignature = null;
+window.ChatMessages?.resetSignature();
 let typingIndicatorTimeout = null;
 let typingThrottleTimeout = null;
 let pendingNewMessagesCount = 0;
@@ -716,27 +716,26 @@ socket.onmessage = function(e) {
             };
         }
 
-        const wasNearBottom = isUserNearBottom;
-        if (chat) {
-            if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
-            const node = renderMessage(msg, prevMsg, true);
-            chat.appendChild(node);
-        }
+        cconst wasNearBottom = isUserNearBottom;
+            if (chat) {
+                if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
+                window.ChatMessages?.appendMessage(msg);
+            }
 
-        if (wasNearBottom || msg.is_me) {
-            scrollChatToBottom(true);
-        } else {
-            pendingNewMessagesCount += 1;
-            updateScrollButtonVisibility();
-        }
+            if (wasNearBottom || msg.is_me) {
+                scrollChatToBottom(true);
+            } else {
+                pendingNewMessagesCount += 1;
+                updateScrollButtonVisibility();
+            }
 
-        if (!msg.is_me) playNotificationSound();
-        loadDialogs();
+            if (!msg.is_me) playNotificationSound();
+            loadDialogs();
 
-        const signaturesNeedRefresh = msg.attachments && msg.attachments.length > 0;
-        if (signaturesNeedRefresh) {
-            lastRenderedMessageSignature = null;
-        }
+            const signaturesNeedRefresh = msg.attachments && msg.attachments.length > 0;
+            if (signaturesNeedRefresh) {
+                window.ChatMessages?.resetSignature();
+            }
     }
 };
 
@@ -933,7 +932,7 @@ function sendMessageAjax() {
 
             localStorage.removeItem(draftStorageKey);
             clearSelectedFiles();
-            lastRenderedMessageSignature = null;
+            window.ChatMessages?.resetSignature();
             window.ChatMessages?.loadMessages(dialogId);
             loadDialogs();
             scrollChatToBottom(true);

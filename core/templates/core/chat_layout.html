@@ -81,6 +81,11 @@
         --scroll-btn-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
         --new-divider-bg: rgba(255,255,255,0.82);
         --new-divider-border: rgba(226, 232, 240, 0.95);
+        --preview-bg: rgba(255,255,255,0.82);
+        --preview-border: rgba(226,232,240,0.95);
+        --preview-item-bg: rgba(248,250,252,0.95);
+        --preview-item-border: rgba(226,232,240,0.95);
+        --remove-btn-bg: rgba(15,23,42,0.76);
     }
 
     body.theme-dark {
@@ -145,6 +150,11 @@
         --scroll-btn-shadow: 0 14px 32px rgba(2, 6, 23, 0.38);
         --new-divider-bg: rgba(15, 23, 42, 0.94);
         --new-divider-border: #334155;
+        --preview-bg: rgba(15, 23, 42, 0.92);
+        --preview-border: #334155;
+        --preview-item-bg: rgba(2, 6, 23, 0.92);
+        --preview-item-border: #334155;
+        --remove-btn-bg: rgba(2, 6, 23, 0.9);
     }
 
     * { box-sizing: border-box; }
@@ -824,6 +834,106 @@
         margin-top: 6px;
     }
 
+    .selected-files-preview {
+        display: none;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 10px;
+        border: 1px solid var(--preview-border);
+        background: var(--preview-bg);
+        border-radius: 18px;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .selected-files-preview.has-files {
+        display: flex;
+    }
+
+    .selected-file-card {
+        position: relative;
+        width: 104px;
+        min-height: 104px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--preview-item-border);
+        background: var(--preview-item-bg);
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .selected-file-thumb {
+        width: 100%;
+        height: 74px;
+        object-fit: cover;
+        display: block;
+        background: rgba(148, 163, 184, 0.10);
+    }
+
+    .selected-file-generic {
+        width: 100%;
+        height: 74px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        background:
+            linear-gradient(135deg, rgba(59,130,246,0.10), rgba(16,185,129,0.08));
+        border-bottom: 1px solid var(--preview-item-border);
+    }
+
+    .selected-file-info {
+        padding: 8px 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-height: 0;
+        flex: 1;
+    }
+
+    .selected-file-title {
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.25;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+    }
+
+    .selected-file-meta {
+        font-size: 10px;
+        color: var(--text-soft);
+        line-height: 1.2;
+    }
+
+    .selected-file-remove {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 999px;
+        background: var(--remove-btn-bg);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+        transition: 0.16s ease;
+    }
+
+    .selected-file-remove:hover {
+        transform: scale(1.06);
+        background: rgba(239, 68, 68, 0.92);
+    }
+
     .scroll-to-bottom-btn {
         position: absolute;
         right: 22px;
@@ -1084,6 +1194,11 @@
             border-radius: 16px;
             padding: 0 12px;
         }
+
+        .selected-file-card {
+            width: calc(50% - 5px);
+            min-width: 0;
+        }
     }
 </style>
 </head>
@@ -1210,6 +1325,8 @@
             <div class="input-area">
                 <form method="post" enctype="multipart/form-data" id="messageForm">
                     {% csrf_token %}
+
+                    <div id="selectedFilesPreview" class="selected-files-preview"></div>
 
                     <div class="composer">
                         <label for="fileInput" class="attach-btn" title="Прикрепить файл">
@@ -1676,6 +1793,7 @@ const dialogsList = document.getElementById('dialogsList');
 const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
 const scrollBottomCount = document.getElementById('scrollBottomCount');
 const selectedFileName = document.getElementById('selectedFileName');
+const selectedFilesPreview = document.getElementById('selectedFilesPreview');
 const draftStorageKey = `chat_draft_${dialogId}`;
 
 let isUserNearBottom = true;
@@ -1684,6 +1802,7 @@ let typingIndicatorTimeout = null;
 let typingThrottleTimeout = null;
 let pendingNewMessagesCount = 0;
 let newMessagesDivider = null;
+let selectedFilesBuffer = [];
 
 function updateScrollButtonVisibility() {
     if (!chat || !scrollToBottomBtn) return;
@@ -2053,17 +2172,148 @@ function loadMessages() {
         .catch(err => console.error(err));
 }
 
-function clearSelectedFiles() {
-    if (fileInput) fileInput.value = '';
-    if (selectedFileName) {
+function formatFileSize(bytes) {
+    const size = Number(bytes || 0);
+    if (!size) return '0 Б';
+    const units = ['Б', 'КБ', 'МБ', 'ГБ'];
+    let value = size;
+    let index = 0;
+
+    while (value >= 1024 && index < units.length - 1) {
+        value /= 1024;
+        index += 1;
+    }
+
+    return `${value >= 10 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
+}
+
+function getFileIcon(file) {
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+
+    if (type.startsWith('image/')) return '🖼️';
+    if (type.startsWith('audio/')) return '🎵';
+    if (name.endsWith('.pdf')) return '📄';
+    if (name.endsWith('.doc') || name.endsWith('.docx')) return '📝';
+    if (name.endsWith('.xls') || name.endsWith('.xlsx')) return '📊';
+    if (name.endsWith('.zip') || name.endsWith('.rar')) return '🗜️';
+    if (name.endsWith('.txt')) return '📃';
+    return '📎';
+}
+
+function syncFileInputWithBuffer() {
+    if (!fileInput) return;
+    const dt = new DataTransfer();
+    selectedFilesBuffer.forEach(file => dt.items.add(file));
+    fileInput.files = dt.files;
+}
+
+function revokePreviewUrls() {
+    if (!selectedFilesPreview) return;
+    selectedFilesPreview.querySelectorAll('[data-preview-url]').forEach(el => {
+        const url = el.getAttribute('data-preview-url');
+        if (url) URL.revokeObjectURL(url);
+    });
+}
+
+function updateSelectedFileNameLabel() {
+    if (!selectedFileName) return;
+
+    if (!selectedFilesBuffer.length) {
         selectedFileName.textContent = '';
         selectedFileName.classList.remove('has-file');
+        return;
     }
+
+    if (selectedFilesBuffer.length === 1) {
+        selectedFileName.textContent = 'Файл: ' + selectedFilesBuffer[0].name;
+    } else {
+        selectedFileName.textContent = 'Файлов выбрано: ' + selectedFilesBuffer.length;
+    }
+
+    selectedFileName.classList.add('has-file');
+}
+
+function renderSelectedFilesPreview() {
+    if (!selectedFilesPreview) return;
+
+    revokePreviewUrls();
+    selectedFilesPreview.innerHTML = '';
+
+    if (!selectedFilesBuffer.length) {
+        selectedFilesPreview.classList.remove('has-files');
+        updateSelectedFileNameLabel();
+        return;
+    }
+
+    selectedFilesPreview.classList.add('has-files');
+
+    selectedFilesBuffer.forEach((file, index) => {
+        const card = document.createElement('div');
+        card.className = 'selected-file-card';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'selected-file-remove';
+        removeBtn.setAttribute('aria-label', `Удалить ${file.name}`);
+        removeBtn.title = 'Удалить файл';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', function() {
+            removeSelectedFile(index);
+        });
+
+        let previewTop = '';
+        if ((file.type || '').startsWith('image/')) {
+            const previewUrl = URL.createObjectURL(file);
+            previewTop = `<img src="${previewUrl}" alt="${escapeHtml(file.name)}" class="selected-file-thumb" data-preview-url="${previewUrl}">`;
+        } else {
+            previewTop = `<div class="selected-file-generic">${getFileIcon(file)}</div>`;
+        }
+
+        card.innerHTML = `
+            ${previewTop}
+            <div class="selected-file-info">
+                <div class="selected-file-title">${escapeHtml(file.name)}</div>
+                <div class="selected-file-meta">${escapeHtml(formatFileSize(file.size))}</div>
+            </div>
+        `;
+
+        card.appendChild(removeBtn);
+        selectedFilesPreview.appendChild(card);
+    });
+
+    updateSelectedFileNameLabel();
+}
+
+function removeSelectedFile(index) {
+    selectedFilesBuffer = selectedFilesBuffer.filter((_, i) => i !== index);
+    syncFileInputWithBuffer();
+    renderSelectedFilesPreview();
+}
+
+function addFilesToSelection(files, append = true) {
+    const incomingFiles = Array.from(files || []);
+    if (!incomingFiles.length) return;
+
+    if (append) {
+        selectedFilesBuffer = [...selectedFilesBuffer, ...incomingFiles];
+    } else {
+        selectedFilesBuffer = incomingFiles;
+    }
+
+    syncFileInputWithBuffer();
+    renderSelectedFilesPreview();
+}
+
+function clearSelectedFiles() {
+    selectedFilesBuffer = [];
+    syncFileInputWithBuffer();
+    renderSelectedFilesPreview();
 }
 
 function sendMessageAjax() {
     const text = messageInput ? messageInput.value.trim() : '';
-    const hasFile = fileInput && fileInput.files.length > 0;
+    const hasFile = selectedFilesBuffer.length > 0;
 
     if (!text && !hasFile) return;
 
@@ -2071,7 +2321,7 @@ function sendMessageAjax() {
         const formData = new FormData();
         formData.append('text', text);
 
-        for (const file of fileInput.files) {
+        for (const file of selectedFilesBuffer) {
             formData.append('file', file);
         }
 
@@ -2156,24 +2406,16 @@ function autoResizeTextarea() {
     messageInput.style.height = Math.min(messageInput.scrollHeight, 220) + 'px';
 }
 
-if (fileInput && selectedFileName) {
+if (fileInput) {
     fileInput.addEventListener('change', function() {
-        if (fileInput.files && fileInput.files.length > 0) {
-            if (fileInput.files.length === 1) {
-                selectedFileName.textContent = 'Файл: ' + fileInput.files[0].name;
-            } else {
-                selectedFileName.textContent = 'Файлов выбрано: ' + fileInput.files.length;
-            }
-            selectedFileName.classList.add('has-file');
-        } else {
-            clearSelectedFiles();
-        }
+        addFilesToSelection(fileInput.files, false);
     });
 }
 
 loadMessages();
 restoreDraft();
 syncMainDialogTitle();
+renderSelectedFilesPreview();
 
 if (dialogsList) {
     const dialogsObserver = new MutationObserver(() => {
@@ -2219,22 +2461,9 @@ if (chat) {
         e.preventDefault();
 
         const files = e.dataTransfer.files;
-        if (!files || !files.length || !fileInput) return;
+        if (!files || !files.length) return;
 
-        const dt = new DataTransfer();
-        for (const file of files) dt.items.add(file);
-        fileInput.files = dt.files;
-
-        if (selectedFileName) {
-            if (dt.files.length === 1) {
-                selectedFileName.textContent = 'Файл: ' + dt.files[0].name;
-            } else {
-                selectedFileName.textContent = 'Файлов выбрано: ' + dt.files.length;
-            }
-            selectedFileName.classList.add('has-file');
-        }
-
-        sendMessageAjax();
+        addFilesToSelection(files, true);
     });
 }
 </script>

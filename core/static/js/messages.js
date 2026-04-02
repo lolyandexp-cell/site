@@ -1,7 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const chat = document.getElementById('chat');
-    if (!chat) return;
+const chat = document.getElementById('chat');
 
+if (chat) {
     const body = document.getElementById('pageBody');
     const currentUserId = body?.dataset.currentUserId ? Number(body.dataset.currentUserId) : null;
     const isAdmin = body?.dataset.isAdmin === 'true';
@@ -216,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (msg.text) {
             html += `
-                <div class="message-body-inline">
+                <div class="message-content-inline">
                     <span class="message-text">${escapeHtml(msg.text)}</span>
                     ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
                 </div>
@@ -316,9 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const messages = (data.messages || []).map(msg => normalizeMessage(msg));
 
             const newSignature = buildMessagesSignature(messages);
-            if (lastRenderedMessageSignature === newSignature) {
-                return;
-            }
+            if (lastRenderedMessageSignature === newSignature) return;
 
             const existingRows = Array.from(chat.querySelectorAll('.message-row'));
             const existingIds = new Set(
@@ -405,4 +402,4 @@ document.addEventListener('DOMContentLoaded', () => {
             lastRenderedMessageSignature = null;
         }
     };
-});
+}

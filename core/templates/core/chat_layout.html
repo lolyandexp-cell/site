@@ -16,6 +16,7 @@
     id="pageBody"
     data-current-user-id="{{ request.user.id }}"
     data-is-admin="{% if request.user.role == 'admin' %}true{% else %}false{% endif %}">
+
 <div class="app">
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -30,13 +31,13 @@
 
                 <div class="settings-menu" id="settingsMenu">
                     <div class="settings-menu-label">Оформление</div>
-                    <button type="button" class="settings-item" onclick="toggleThemeAndClose()">
+                    <button type="button" class="settings-item" id="themeToggleBtn">
                         <div class="settings-item-left"><span id="themeToggleEmoji">🌙</span> <span id="themeToggleText">Переключить тему</span></div>
                         <span class="settings-status" id="themeStatusLabel">Тёмная</span>
                     </button>
 
                     <div class="settings-menu-label">Уведомления</div>
-                    <button type="button" class="settings-item" onclick="enablePushNotifications(); closeSettingsMenu();">
+                    <button type="button" class="settings-item" onclick="enablePushNotifications();">
                         <div class="settings-item-left">🔔 <span>Push-уведомления</span></div>
                         <span class="settings-status" id="pushStatusLabel">Проверка...</span>
                     </button>
@@ -102,16 +103,32 @@
 
             <div class="chat" id="chat">
                 {% for message in messages %}
-                    <div class="message-row {% if message.real_sender == request.user %}my{% else %}other{% endif %}" data-message-id="{{ message.id }}" data-displayed-sender-id="{{ message.displayed_sender.id|default:'' }}">
+                    <div class="message-row {% if message.real_sender == request.user %}my{% else %}other{% endif %}"
+                         data-message-id="{{ message.id }}"
+                         data-displayed-sender-id="{{ message.displayed_sender.id|default:'' }}">
                         <div class="message {% if request.user.role == 'admin' or message.real_sender == request.user %}has-menu{% endif %}">
+                            {% if request.user.role == 'admin' or message.real_sender == request.user %}
+                                <div class="message-menu-wrapper">
+                                    <button type="button" class="menu-trigger" data-menu-trigger="{{ message.id }}">⋯</button>
+                                    <div class="message-dropdown" id="message-menu-{{ message.id }}">
+                                        <button type="button"
+                                                data-edit-message="{{ message.id }}"
+                                                data-message-text="{{ message.text|default:''|urlencode }}">
+                                            ✏️ Изменить
+                                        </button>
+                                        <button type="button"
+                                                class="danger-item"
+                                                data-delete-message="{{ message.id }}">
+                                            🗑 Удалить
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+
                             {% if message.real_sender == request.user %}
-                                <div class="meta">
-                                    {{ message.displayed_sender.username }}
-                                </div>
+                                <div class="meta">{{ message.displayed_sender.username }}</div>
                             {% else %}
-                                <div class="meta">
-                                    {{ message.displayed_sender.username }} • {{ message.created_at|time }}
-                                </div>
+                                <div class="meta">{{ message.displayed_sender.username }} • {{ message.created_at|time }}</div>
                             {% endif %}
 
                             {% if message.text %}
@@ -214,6 +231,12 @@
     <source src="{% static 'sounds/notification.mp3' %}" type="audio/mpeg">
 </audio>
 
+<script src="{% static 'js/ui.js' %}"></script>
+<script src="{% static 'js/theme.js' %}"></script>
+<script src="{% static 'js/viewer.js' %}"></script>
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/messages.js' %}"></script>
+
 <script>
 function getCookie(name) {
     let cookieValue = null;
@@ -245,9 +268,6 @@ const searchInput = document.getElementById('dialogSearch');
 const notificationSound = document.getElementById('notificationSound');
 const toastContainer = document.getElementById('toastContainer');
 const pushStatusLabel = document.getElementById('pushStatusLabel');
-const imageViewer = document.getElementById('imageViewer');
-const imageViewerImg = document.getElementById('imageViewerImg');
-const imageViewerClose = document.getElementById('imageViewerClose');
 const currentDialogId = {% if current_dialog %}{{ current_dialog.id }}{% else %}null{% endif %};
 const defaultPageTitle = document.title;
 
@@ -257,7 +277,6 @@ let previousUnreadMap = {};
 let previousDialogSnapshotString = '';
 let titleBlinkInterval = null;
 let titleBlinkCount = 0;
-
 
 function unlockNotificationSound() {
     if (!notificationSound || soundUnlocked) return;
@@ -410,14 +429,6 @@ function applyDialogFilter() {
 
 if (searchInput) searchInput.addEventListener('input', applyDialogFilter);
 
-if (imageViewerClose) imageViewerClose.addEventListener('click', closeImageViewer);
-
-if (imageViewer) {
-    imageViewer.addEventListener('click', function(event) {
-        if (event.target === imageViewer) closeImageViewer();
-    });
-}
-
 function renderDialogItem(d) {
     const unread = Number(d.unread || 0);
     const el = document.createElement('a');
@@ -547,7 +558,6 @@ const selectedFilesPreview = document.getElementById('selectedFilesPreview');
 const draftStorageKey = `chat_draft_${dialogId}`;
 
 let isUserNearBottom = true;
-window.ChatMessages?.resetSignature();
 let typingIndicatorTimeout = null;
 let typingThrottleTimeout = null;
 let pendingNewMessagesCount = 0;
@@ -705,37 +715,26 @@ socket.onmessage = function(e) {
         const existing = document.querySelector(`[data-message-id="${msg.id}"]`);
         if (existing) return;
 
-        const rows = chat ? Array.from(chat.querySelectorAll('.message-row')) : [];
-        const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
-
-        let prevMsg = null;
-        if (lastMessageEl) {
-            prevMsg = {
-                displayed_sender_id: Number(lastMessageEl.getAttribute('data-displayed-sender-id')),
-                is_me: lastMessageEl.classList.contains('my')
-            };
+        const wasNearBottom = isUserNearBottom;
+        if (chat) {
+            if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
+            window.ChatMessages?.appendMessage(msg);
         }
 
-        cconst wasNearBottom = isUserNearBottom;
-            if (chat) {
-                if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
-                window.ChatMessages?.appendMessage(msg);
-            }
+        if (wasNearBottom || msg.is_me) {
+            scrollChatToBottom(true);
+        } else {
+            pendingNewMessagesCount += 1;
+            updateScrollButtonVisibility();
+        }
 
-            if (wasNearBottom || msg.is_me) {
-                scrollChatToBottom(true);
-            } else {
-                pendingNewMessagesCount += 1;
-                updateScrollButtonVisibility();
-            }
+        if (!msg.is_me) playNotificationSound();
+        loadDialogs();
 
-            if (!msg.is_me) playNotificationSound();
-            loadDialogs();
-
-            const signaturesNeedRefresh = msg.attachments && msg.attachments.length > 0;
-            if (signaturesNeedRefresh) {
-                window.ChatMessages?.resetSignature();
-            }
+        const signaturesNeedRefresh = msg.attachments && msg.attachments.length > 0;
+        if (signaturesNeedRefresh) {
+            window.ChatMessages?.resetSignature();
+        }
     }
 };
 
@@ -1013,10 +1012,14 @@ if (fileInput) {
     });
 }
 
-window.ChatMessages?.loadMessages(dialogId);
 restoreDraft();
 syncMainDialogTitle();
 renderSelectedFilesPreview();
+
+window.addEventListener('DOMContentLoaded', function() {
+    window.ChatMessages?.resetSignature();
+    window.ChatMessages?.loadMessages(dialogId);
+});
 
 if (dialogsList) {
     const dialogsObserver = new MutationObserver(() => {
@@ -1201,10 +1204,5 @@ if ('serviceWorker' in navigator) {
     updatePushStatusLabel();
 }
 </script>
-<script src="{% static 'js/ui.js' %}"></script>
-<script src="{% static 'js/theme.js' %}"></script>
-<script src="{% static 'js/viewer.js' %}"></script>
-<script src="{% static 'js/scroll.js' %}"></script>
-<script src="{% static 'js/messages.js' %}"></script>
 </body>
 </html>

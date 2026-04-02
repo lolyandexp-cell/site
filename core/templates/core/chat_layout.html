@@ -23,6 +23,7 @@
         --danger: #ef4444;
         --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
         --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
+        --menu-shadow: 0 18px 40px rgba(15, 23, 42, 0.20);
     }
 
     body.theme-light {
@@ -72,6 +73,9 @@
         --field-bg: #ffffff;
         --field-border: var(--line);
         --theme-btn-hover: rgba(59, 130, 246, 0.18);
+        --settings-menu-bg: rgba(255, 255, 255, 0.95);
+        --settings-item-hover: rgba(37, 99, 235, 0.08);
+        --overlay-bg: rgba(15, 23, 42, 0.86);
     }
 
     body.theme-dark {
@@ -128,6 +132,9 @@
         --field-bg: #020617;
         --field-border: #1e293b;
         --theme-btn-hover: rgba(59, 130, 246, 0.22);
+        --settings-menu-bg: rgba(15, 23, 42, 0.98);
+        --settings-item-hover: rgba(59, 130, 246, 0.12);
+        --overlay-bg: rgba(2, 6, 23, 0.90);
     }
 
     * {
@@ -152,7 +159,7 @@
 
     .app {
         display: flex;
-        height: 100vh;
+        height: 100dvh;
         width: 100%;
         position: relative;
     }
@@ -172,7 +179,7 @@
     }
 
     .sidebar-header {
-        padding: 24px 22px 16px;
+        padding: 20px 18px 14px;
         font-size: 24px;
         font-weight: 800;
         letter-spacing: -0.02em;
@@ -180,60 +187,127 @@
         background: var(--sidebar-header-bg);
         position: sticky;
         top: 0;
-        z-index: 3;
-    }
-
-    .sidebar-links {
-        padding: 12px 22px 14px;
-        border-bottom: 1px solid var(--line-soft);
-        background: var(--subpanel-bg);
+        z-index: 5;
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
     }
 
-    .sidebar-links a {
+    .sidebar-title {
+        min-width: 0;
+    }
+
+    .header-tools {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .settings-trigger {
+        width: 42px;
+        height: 42px;
+        border: 1px solid var(--field-border);
+        border-radius: 14px;
+        background: var(--blue-soft);
+        color: var(--blue);
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        color: var(--blue);
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 10px 14px;
-        border-radius: 999px;
-        background: var(--blue-soft);
-        transition: 0.18s ease;
-    }
-
-    .sidebar-links a:hover {
-        background: var(--theme-btn-hover);
-        transform: translateY(-1px);
-    }
-
-    .theme-btn {
-        border: none;
-        padding: 10px 14px;
-        border-radius: 999px;
-        background: var(--blue-soft);
-        color: var(--blue);
-        font-size: 14px;
-        font-weight: 700;
+        justify-content: center;
         cursor: pointer;
         transition: 0.18s ease;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
-    .theme-btn:hover {
+    .settings-trigger:hover {
         transform: translateY(-1px);
         background: var(--theme-btn-hover);
+    }
+
+    .settings-trigger svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .settings-menu {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 240px;
+        background: var(--settings-menu-bg);
+        border: 1px solid var(--field-border);
+        border-radius: 18px;
+        box-shadow: var(--menu-shadow);
+        padding: 8px;
+        display: none;
+        z-index: 30;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .settings-menu.open {
+        display: block;
+    }
+
+    .settings-menu-label {
+        font-size: 11px;
+        color: var(--text-faint);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 10px 12px 6px;
+    }
+
+    .settings-item,
+    .settings-link {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: none;
+        background: transparent;
+        color: var(--text);
+        text-decoration: none;
+        padding: 11px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: 0.16s ease;
+    }
+
+    .settings-item:hover,
+    .settings-link:hover {
+        background: var(--settings-item-hover);
+    }
+
+    .settings-item-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .settings-status {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-soft);
+        white-space: nowrap;
+    }
+
+    .status-on {
+        color: #22c55e;
+    }
+
+    .status-off {
+        color: #f59e0b;
     }
 
     .search-box {
-        padding: 16px 18px;
+        padding: 14px 16px;
         border-bottom: 1px solid var(--line-soft);
         background: var(--search-bg);
         position: sticky;
-        top: 81px;
+        top: 77px;
         z-index: 2;
     }
 
@@ -270,7 +344,7 @@
 
     .dialog-item {
         display: block;
-        padding: 15px;
+        padding: 14px;
         margin-bottom: 8px;
         border-radius: 18px;
         text-decoration: none;
@@ -386,6 +460,7 @@
         min-width: 0;
         background: var(--main-bg);
         position: relative;
+        height: 100dvh;
     }
 
     .main::before {
@@ -403,7 +478,7 @@
         background: var(--header-bg);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        padding: 20px 24px;
+        padding: 18px 24px;
         border-bottom: 1px solid var(--header-border);
         box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
         display: flex;
@@ -454,12 +529,13 @@
     .chat {
         flex: 1;
         overflow-y: auto;
-        padding: 28px 26px 28px;
+        padding: 24px 24px 12px;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 14px;
         position: relative;
         z-index: 1;
+        min-height: 0;
     }
 
     .empty-chat {
@@ -656,6 +732,12 @@
         border: 1px solid var(--line);
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
         background: #fff;
+        cursor: zoom-in;
+        transition: 0.18s ease;
+    }
+
+    img.chat-image:hover {
+        transform: scale(1.01);
     }
 
     audio {
@@ -663,76 +745,6 @@
         max-width: 100%;
         margin-top: 8px;
         display: block;
-    }
-
-    .message-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-
-    .action-btn {
-        border: 1px solid transparent;
-        border-radius: 999px;
-        padding: 5px 7px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 700;
-        transition: 0.16s ease;
-        background: rgba(255, 255, 255, 0.10);
-        color: var(--text-soft);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-    }
-
-    .action-btn:hover {
-        transform: translateY(-1px);
-    }
-
-    .action-btn.edit-btn {
-        background: rgba(255, 255, 255, 0.10);
-        color: #dbeafe;
-        border-color: rgba(255, 255, 255, 0.10);
-    }
-
-    .action-btn.edit-btn:hover {
-        background: rgba(255, 255, 255, 0.16);
-    }
-
-    .action-btn.delete-btn {
-        background: rgba(239, 68, 68, 0.12);
-        color: #fecaca;
-        border-color: rgba(239, 68, 68, 0.18);
-    }
-
-    .action-btn.delete-btn:hover {
-        background: rgba(239, 68, 68, 0.18);
-    }
-
-    body.theme-light .action-btn {
-        background: rgba(15, 23, 42, 0.05);
-        color: #475569;
-    }
-
-    body.theme-light .action-btn.edit-btn {
-        background: rgba(37, 99, 235, 0.08);
-        color: #1d4ed8;
-        border-color: rgba(37, 99, 235, 0.12);
-    }
-
-    body.theme-light .action-btn.edit-btn:hover {
-        background: rgba(37, 99, 235, 0.14);
-    }
-
-    body.theme-light .action-btn.delete-btn {
-        background: rgba(239, 68, 68, 0.08);
-        color: #dc2626;
-        border-color: rgba(239, 68, 68, 0.14);
-    }
-
-    body.theme-light .action-btn.delete-btn:hover {
-        background: rgba(239, 68, 68, 0.14);
     }
 
     .input-area {
@@ -744,7 +756,7 @@
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
         border-top: 1px solid var(--input-border);
-        padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+        padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.04);
     }
 
@@ -781,10 +793,10 @@
     }
 
     .attach-btn {
-        width: 54px;
-        height: 54px;
-        min-width: 54px;
-        border-radius: 18px;
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        border-radius: 16px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -838,11 +850,11 @@
     }
 
     .send-icon-btn {
-        width: 54px;
-        height: 54px;
-        min-width: 54px;
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
         border: none;
-        border-radius: 18px;
+        border-radius: 16px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -870,7 +882,7 @@
     }
 
     .selected-file-name {
-        margin-top: 8px;
+        margin-top: 6px;
         margin-left: 4px;
         font-size: 13px;
         color: var(--text-soft);
@@ -893,129 +905,6 @@
     .dialogs::-webkit-scrollbar-track,
     .chat::-webkit-scrollbar-track {
         background: transparent;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(6px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @media (max-width: 1100px) {
-        .sidebar {
-            width: 320px;
-            min-width: 320px;
-        }
-
-        .message {
-            max-width: 76%;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .app {
-            flex-direction: column;
-        }
-
-        .sidebar {
-            width: 100%;
-            min-width: 0;
-            height: 45vh;
-            border-right: none;
-            border-bottom: 1px solid var(--line);
-        }
-
-        body.chat-open .sidebar {
-            display: none;
-        }
-
-        .main {
-            height: 55vh;
-        }
-
-        body.chat-open .main {
-            height: 100vh;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .chat {
-            padding: 12px 12px 20px;
-            gap: 10px;
-        }
-
-        .message {
-            max-width: 90%;
-            font-size: 14px;
-        }
-
-        .input-area {
-            padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-        }
-    }
-
-    @media (max-width: 560px) {
-        .sidebar-header,
-        .main-header {
-            padding-left: 16px;
-            padding-right: 16px;
-        }
-
-        .search-box,
-        .sidebar-links,
-        .input-area {
-            padding-left: 14px;
-            padding-right: 14px;
-        }
-
-        .input-area {
-            padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-        }
-
-        .chat {
-            padding: 12px 10px 20px;
-        }
-
-        .message {
-            max-width: 94%;
-            padding: 12px 13px;
-        }
-
-        .main-title {
-            font-size: 20px;
-        }
-
-        .sidebar-header {
-            font-size: 22px;
-        }
-
-        .attach-btn {
-            width: 44px;
-            height: 44px;
-            min-width: 44px;
-            border-radius: 14px;
-        }
-
-        .send-icon-btn {
-            width: 48px;
-            height: 48px;
-            min-width: 48px;
-            border-radius: 16px;
-        }
-
-        .send-icon-btn svg {
-            width: 20px;
-            height: 20px;
-        }
     }
 
     .toast-container {
@@ -1071,18 +960,262 @@
         color: var(--blue);
         font-weight: 700;
     }
+
+    .image-viewer {
+        position: fixed;
+        inset: 0;
+        background: var(--overlay-bg);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    .image-viewer.open {
+        display: flex;
+    }
+
+    .image-viewer-content {
+        position: relative;
+        max-width: min(96vw, 1400px);
+        max-height: 92vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .image-viewer img {
+        max-width: 100%;
+        max-height: 92vh;
+        object-fit: contain;
+        border-radius: 18px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        background: rgba(255,255,255,0.04);
+    }
+
+    .image-viewer-close {
+        position: absolute;
+        top: -14px;
+        right: -14px;
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.92);
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+
+    .image-viewer-close:hover {
+        transform: scale(1.04);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .sidebar {
+            width: 320px;
+            min-width: 320px;
+        }
+
+        .message {
+            max-width: 76%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .app {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 100%;
+            min-width: 0;
+            height: 100dvh;
+            border-right: none;
+            border-bottom: 1px solid var(--line);
+        }
+
+        body.chat-open .sidebar {
+            display: none;
+        }
+
+        .main {
+            display: none;
+            height: 100dvh;
+        }
+
+        body.chat-open .main {
+            display: flex;
+            height: 100dvh;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-header {
+            padding: 16px 14px 12px;
+            font-size: 18px;
+        }
+
+        .settings-trigger {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+        }
+
+        .settings-menu {
+            width: min(240px, calc(100vw - 32px));
+        }
+
+        .search-box {
+            top: 67px;
+            padding: 12px 14px;
+        }
+
+        .search-box input {
+            padding: 11px 14px;
+            border-radius: 14px;
+        }
+
+        .dialogs {
+            padding: 8px;
+        }
+
+        .dialog-item {
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 8px;
+        }
+
+        .dialog-avatar {
+            width: 38px;
+            height: 38px;
+            font-size: 14px;
+        }
+
+        .dialog-name {
+            font-size: 14px;
+        }
+
+        .dialog-preview {
+            font-size: 12px;
+        }
+
+        .dialog-time {
+            font-size: 11px;
+        }
+
+        .main-header {
+            padding: 14px 14px;
+        }
+
+        .main-title {
+            font-size: 20px;
+        }
+
+        .main-subtitle {
+            font-size: 12px;
+        }
+
+        .chat {
+            padding: 12px 10px 10px;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 90%;
+            font-size: 14px;
+            padding: 12px 13px;
+        }
+
+        .input-area {
+            padding: 10px 10px max(10px, env(safe-area-inset-bottom, 0px));
+        }
+
+        .attach-btn,
+        .send-icon-btn {
+            width: 46px;
+            height: 46px;
+            min-width: 46px;
+            border-radius: 14px;
+        }
+
+        .send-icon-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #messageInput {
+            min-height: 46px;
+            height: 46px;
+        }
+
+        .image-viewer {
+            padding: 12px;
+        }
+
+        .image-viewer-close {
+            top: 8px;
+            right: 8px;
+            width: 38px;
+            height: 38px;
+            font-size: 20px;
+        }
+    }
 </style>
 </head>
 <body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody">
 <div class="app">
     <aside class="sidebar">
-        <div class="sidebar-header">Мои диалоги</div>
+        <div class="sidebar-header">
+            <div class="sidebar-title">Мои диалоги</div>
+            <div class="header-tools">
+                <button type="button" class="settings-trigger" id="settingsTrigger" aria-label="Настройки">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M10.33 2.93c.54-1.24 2.3-1.24 2.84 0l.44 1.01a1.8 1.8 0 001.9 1.07l1.1-.14c1.35-.17 2.24 1.3 1.52 2.45l-.58.91a1.8 1.8 0 00.23 2.17l.79.79c.96.96.5 2.61-.84 3l-1.08.31a1.8 1.8 0 00-1.23 1.8l.03 1.1c.04 1.36-1.39 2.19-2.55 1.46l-.93-.59a1.8 1.8 0 00-2.08 0l-.93.59c-1.16.73-2.59-.1-2.55-1.46l.03-1.1a1.8 1.8 0 00-1.23-1.8l-1.08-.31c-1.34-.39-1.8-2.04-.84-3l.79-.79a1.8 1.8 0 00.23-2.17l-.58-.91c-.72-1.15.17-2.62 1.52-2.45l1.1.14a1.8 1.8 0 001.9-1.07l.44-1.01z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                    </svg>
+                </button>
 
-        <div class="sidebar-links">
-            <button type="button" onclick="setTheme('light')" class="theme-btn">☀️ Светлая</button>
-            <button type="button" onclick="setTheme('dark')" class="theme-btn">🌙 Тёмная</button>
-            <button type="button" onclick="enablePushNotifications()" class="theme-btn">🔔 Уведомления</button>
-            <a href="/logout/">Выйти</a>
+                <div class="settings-menu" id="settingsMenu">
+                    <div class="settings-menu-label">Оформление</div>
+                    <button type="button" class="settings-item" onclick="setThemeAndClose('light')">
+                        <div class="settings-item-left">☀️ <span>Светлая тема</span></div>
+                    </button>
+                    <button type="button" class="settings-item" onclick="setThemeAndClose('dark')">
+                        <div class="settings-item-left">🌙 <span>Тёмная тема</span></div>
+                    </button>
+
+                    <div class="settings-menu-label">Уведомления</div>
+                    <button type="button" class="settings-item" onclick="enablePushNotifications(); closeSettingsMenu();">
+                        <div class="settings-item-left">🔔 <span>Push-уведомления</span></div>
+                        <span class="settings-status" id="pushStatusLabel">Проверка...</span>
+                    </button>
+
+                    <div class="settings-menu-label">Аккаунт</div>
+                    <a href="/logout/" class="settings-link">
+                        <div class="settings-item-left">🚪 <span>Выйти</span></div>
+                    </a>
+                </div>
+            </div>
         </div>
 
         <div class="search-box">
@@ -1220,6 +1353,13 @@
 
 <div id="toastContainer" class="toast-container"></div>
 
+<div class="image-viewer" id="imageViewer">
+    <div class="image-viewer-content">
+        <button type="button" class="image-viewer-close" id="imageViewerClose">×</button>
+        <img src="" alt="" id="imageViewerImg">
+    </div>
+</div>
+
 <audio id="notificationSound" preload="auto">
     <source src="{% static 'sounds/notification.mp3' %}" type="audio/mpeg">
 </audio>
@@ -1253,13 +1393,24 @@ function setTheme(theme) {
     applySavedTheme();
 }
 
+function setThemeAndClose(theme) {
+    setTheme(theme);
+    closeSettingsMenu();
+}
+
 applySavedTheme();
 </script>
 
 <script>
+const settingsTrigger = document.getElementById('settingsTrigger');
+const settingsMenu = document.getElementById('settingsMenu');
 const searchInput = document.getElementById('dialogSearch');
 const notificationSound = document.getElementById('notificationSound');
 const toastContainer = document.getElementById('toastContainer');
+const pushStatusLabel = document.getElementById('pushStatusLabel');
+const imageViewer = document.getElementById('imageViewer');
+const imageViewerImg = document.getElementById('imageViewerImg');
+const imageViewerClose = document.getElementById('imageViewerClose');
 const currentDialogId = {% if current_dialog %}{{ current_dialog.id }}{% else %}null{% endif %};
 const defaultPageTitle = document.title;
 
@@ -1269,6 +1420,36 @@ let previousUnreadMap = {};
 let previousDialogSnapshot = {};
 let titleBlinkInterval = null;
 let titleBlinkCount = 0;
+
+function openSettingsMenu() {
+    if (settingsMenu) {
+        settingsMenu.classList.add('open');
+    }
+}
+
+function closeSettingsMenu() {
+    if (settingsMenu) {
+        settingsMenu.classList.remove('open');
+    }
+}
+
+if (settingsTrigger) {
+    settingsTrigger.addEventListener('click', function(event) {
+        event.stopPropagation();
+        if (settingsMenu && settingsMenu.classList.contains('open')) {
+            closeSettingsMenu();
+        } else {
+            openSettingsMenu();
+        }
+    });
+}
+
+document.addEventListener('click', function(event) {
+    if (!settingsMenu || !settingsTrigger) return;
+    if (!settingsMenu.contains(event.target) && !settingsTrigger.contains(event.target)) {
+        closeSettingsMenu();
+    }
+});
 
 function unlockNotificationSound() {
     if (!notificationSound || soundUnlocked) return;
@@ -1371,7 +1552,7 @@ function showBrowserNotification(dialogName, messageText, dialogUrl) {
     try {
         const notification = new Notification(dialogName || 'Новое сообщение', {
             body: messageText || 'У вас новое сообщение',
-            icon: '/static/favicon.ico',
+            icon: '/static/icons/icon-192.png',
             tag: dialogUrl || (dialogName || 'chat-notification'),
             renotify: true
         });
@@ -1418,6 +1599,48 @@ if (searchInput) {
         });
     });
 }
+
+function openImageViewer(src, alt) {
+    if (!imageViewer || !imageViewerImg || !src) return;
+    imageViewerImg.src = src;
+    imageViewerImg.alt = alt || '';
+    imageViewer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageViewer() {
+    if (!imageViewer || !imageViewerImg) return;
+    imageViewer.classList.remove('open');
+    imageViewerImg.src = '';
+    imageViewerImg.alt = '';
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('click', function(event) {
+    const target = event.target;
+    if (target && target.classList && target.classList.contains('chat-image')) {
+        openImageViewer(target.src, target.alt);
+    }
+});
+
+if (imageViewerClose) {
+    imageViewerClose.addEventListener('click', closeImageViewer);
+}
+
+if (imageViewer) {
+    imageViewer.addEventListener('click', function(event) {
+        if (event.target === imageViewer) {
+            closeImageViewer();
+        }
+    });
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeImageViewer();
+        closeSettingsMenu();
+    }
+});
 
 function loadDialogs() {
     fetch('/api/dialogs/')
@@ -2055,6 +2278,38 @@ async function saveSubscriptionOnServer(subscription) {
     return await response.json();
 }
 
+async function updatePushStatusLabel() {
+    if (!pushStatusLabel) return;
+
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+        pushStatusLabel.textContent = 'Не поддерживается';
+        pushStatusLabel.classList.remove('status-on');
+        pushStatusLabel.classList.add('status-off');
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.getRegistration('/service-worker.js') || await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+            pushStatusLabel.textContent = 'Выключены';
+            pushStatusLabel.classList.remove('status-on');
+            pushStatusLabel.classList.add('status-off');
+            return;
+        }
+
+        const subscription = await registration.pushManager.getSubscription();
+        const isEnabled = Notification.permission === 'granted' && !!subscription;
+
+        pushStatusLabel.textContent = isEnabled ? 'Включены' : 'Выключены';
+        pushStatusLabel.classList.toggle('status-on', isEnabled);
+        pushStatusLabel.classList.toggle('status-off', !isEnabled);
+    } catch (error) {
+        pushStatusLabel.textContent = 'Ошибка';
+        pushStatusLabel.classList.remove('status-on');
+        pushStatusLabel.classList.add('status-off');
+    }
+}
+
 async function enablePushNotifications() {
     try {
         if (!('Notification' in window)) {
@@ -2081,6 +2336,7 @@ async function enablePushNotifications() {
         }
 
         if (permission !== 'granted') {
+            await updatePushStatusLabel();
             alert('Разрешение на уведомления не выдано');
             return;
         }
@@ -2095,19 +2351,26 @@ async function enablePushNotifications() {
         }
 
         await saveSubscriptionOnServer(subscription);
+        await updatePushStatusLabel();
         alert('Push-уведомления включены');
     } catch (error) {
         console.error(error);
+        await updatePushStatusLabel();
         alert('Не удалось включить push-уведомления');
     }
 }
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js').catch(err => {
-            console.error('Ошибка регистрации service worker:', err);
-        });
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(() => updatePushStatusLabel())
+            .catch(err => {
+                console.error('Ошибка регистрации service worker:', err);
+                updatePushStatusLabel();
+            });
     });
+} else {
+    updatePushStatusLabel();
 }
 </script>
 </body>

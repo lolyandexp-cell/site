@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#1d4ed8">
     <link rel="stylesheet" href="{% static 'css/chat.css' %}">
 </head>
-<body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody">
+<body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody" data-current-user-id="{{ request.user.id }}">
 <div class="app">
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -755,82 +755,6 @@ function sendTyping() {
     }, 1200);
 }
 
-function closeAllMessageMenus() {
-    document.querySelectorAll('.message-dropdown.open').forEach(menu => menu.classList.remove('open'));
-    document.querySelectorAll('.message-row.menu-open').forEach(row => row.classList.remove('menu-open'));
-}
-
-function toggleMessageMenu(event, messageId) {
-    event.stopPropagation();
-    const menu = document.getElementById(`message-menu-${messageId}`);
-    if (!menu) return;
-
-    const row = menu.closest('.message-row');
-    const isOpen = menu.classList.contains('open');
-
-    closeAllMessageMenus();
-
-    if (!isOpen) {
-        menu.classList.add('open');
-        if (row) row.classList.add('menu-open');
-    }
-}
-
-document.addEventListener('click', function() {
-    closeAllMessageMenus();
-});
-
-function deleteMessage(messageId) {
-    if (!confirm('Удалить сообщение?')) return;
-
-    fetch(`/api/messages/${messageId}/delete/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') }
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Ошибка удаления');
-        return res.json();
-    })
-    .then(() => {
-        lastRenderedMessageSignature = null;
-        loadMessages();
-        loadDialogs();
-    })
-    .catch(err => console.error(err));
-}
-
-function editMessage(messageId, encodedText) {
-    const currentText = decodeURIComponent(encodedText || '');
-    const newText = prompt('Редактировать сообщение:', currentText);
-
-    if (newText === null) return;
-
-    const trimmedText = newText.trim();
-    if (!trimmedText) {
-        alert('Текст сообщения не может быть пустым');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('text', trimmedText);
-
-    fetch(`/api/messages/${messageId}/edit/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: formData
-    })
-    .then(res => {
-        if (!res.ok) throw new Error('Ошибка редактирования');
-        return res.json();
-    })
-    .then(() => {
-        lastRenderedMessageSignature = null;
-        loadMessages();
-        loadDialogs();
-    })
-    .catch(err => console.error(err));
-}
-
 function renderChecks(isRead, time) {
     return `
         <span class="message-status-line">
@@ -1427,5 +1351,6 @@ if ('serviceWorker' in navigator) {
 <script src="{% static 'js/theme.js' %}"></script>
 <script src="{% static 'js/viewer.js' %}"></script>
 <script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/messages.js' %}"></script>
 </body>
 </html>

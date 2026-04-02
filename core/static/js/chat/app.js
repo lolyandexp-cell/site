@@ -256,7 +256,25 @@ const ChatApp = {
 
 function readConfig() {
     const node = document.getElementById('chat-config');
-    return node ? JSON.parse(node.textContent) : {};
+    if (!node) return {};
+
+    return {
+        currentDialogId: node.dataset.currentDialogId
+            ? Number(node.dataset.currentDialogId)
+            : null,
+
+        currentUserId: node.dataset.currentUserId
+            ? Number(node.dataset.currentUserId)
+            : null,
+
+        currentUserRole: node.dataset.currentUserRole || '',
+
+        isAdmin: node.dataset.isAdmin === 'true',
+
+        vapidPublicKey: node.dataset.vapidPublicKey || '',
+
+        defaultPageTitle: node.dataset.defaultPageTitle || document.title,
+    };
 }
 
 ChatApp.init();

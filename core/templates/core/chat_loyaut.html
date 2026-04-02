@@ -209,16 +209,16 @@
     <source src="{% static 'sounds/notification.mp3' %}" type="audio/mpeg">
 </audio>
 
-<script id="chat-config" type="application/json">
-{
-    "currentDialogId": {% if current_dialog %}{{ current_dialog.id }}{% else %}null{% endif %},
-    "currentUserId": {{ request.user.id }},
-    "currentUserRole": "{{ request.user.role|escapejs }}",
-    "isAdmin": {% if request.user.role == 'admin' %}true{% else %}false{% endif %},
-    "vapidPublicKey": "{{ vapid_public_key|default:''|escapejs }}",
-    "defaultPageTitle": "RepetitorLite"
-}
-</script>
+<div
+    id="chat-config"
+    data-current-dialog-id="{% if current_dialog %}{{ current_dialog.id }}{% endif %}"
+    data-current-user-id="{{ request.user.id }}"
+    data-current-user-role="{{ request.user.role|escapejs }}"
+    data-is-admin="{% if request.user.role == 'admin' %}true{% else %}false{% endif %}"
+    data-vapid-public-key="{{ vapid_public_key|default:''|escapejs }}"
+    data-default-page-title="RepetitorLite"
+    hidden
+></div>
 
 <script type="module" src="{% static 'js/chat/app.js' %}"></script>
 </body>

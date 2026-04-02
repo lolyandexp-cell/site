@@ -35,7 +35,7 @@ class Dialog(models.Model):
         ADMIN_TEACHER = 'admin_teacher', 'Админ ↔ Репетитор'
         GROUP_CHAT = 'group_chat', 'Беседа'
 
-    group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE)
+    group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE, null=True, blank=True)
     dialog_type = models.CharField(max_length=50, choices=DialogType.choices)
     name = models.CharField(max_length=255, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)

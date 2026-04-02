@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const chat = document.getElementById('chat');
     if (!chat) return;
 
+    const body = document.getElementById('pageBody');
+    const currentUserId = body?.dataset.currentUserId ? Number(body.dataset.currentUserId) : null;
+    const isAdmin = body?.dataset.isAdmin === 'true';
+
     let lastRenderedMessageSignature = null;
 
     function getCookie(name) {
@@ -26,6 +30,24 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function enrichMessagePermissions(msg) {
+        const enriched = { ...msg };
+
+        if (typeof enriched.is_me === 'undefined') {
+            enriched.is_me = Number(enriched.real_sender_id) === Number(currentUserId);
+        }
+
+        if (typeof enriched.can_edit === 'undefined') {
+            enriched.can_edit = isAdmin || Number(enriched.real_sender_id) === Number(currentUserId);
+        }
+
+        if (typeof enriched.can_delete === 'undefined') {
+            enriched.can_delete = isAdmin || Number(enriched.real_sender_id) === Number(currentUserId);
+        }
+
+        return enriched;
     }
 
     function closeAllMessageMenus() {
@@ -248,6 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appendMessage(msg) {
+        msg = enrichMessagePermissions(msg);
+
         const rows = Array.from(chat.querySelectorAll('.message-row'));
         const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
 
@@ -272,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) throw new Error('Ошибка загрузки сообщений');
 
             const data = await res.json();
-            const messages = (data.messages || []).map(msg => ({
+            const messages = (data.messages || []).map(msg => enrichMessagePermissions({
                 ...msg,
                 is_read: !!msg.is_read
             }));

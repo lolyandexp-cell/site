@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#1d4ed8">
     <link rel="stylesheet" href="{% static 'css/chat.css' %}">
 </head>
-<body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody" data-current-user-id="{{ request.user.id }}">
+<body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody" data-current-user-id="{{ request.user.id }}" data-is-admin="{% if request.user.role == 'admin' %}true{% else %}false{% endif %}">
 <div class="app">
     <aside class="sidebar">
         <div class="sidebar-header">

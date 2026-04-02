@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>RepetitorLite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="{% static 'icons/icon-192.png' %}" type="image/png">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+    <meta name="theme-color" content="#1d4ed8">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+</head>
+<body class="{% if current_dialog %}chat-open{% endif %} theme-dark" id="pageBody">
+<div class="app">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Мои диалоги</div>
+            <div class="header-tools">
+                <button type="button" class="settings-trigger" id="settingsTrigger" aria-label="Настройки">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M10.33 2.93c.54-1.24 2.3-1.24 2.84 0l.44 1.01a1.8 1.8 0 001.9 1.07l1.1-.14c1.35-.17 2.24 1.3 1.52 2.45l-.58.91a1.8 1.8 0 00.23 2.17l.79.79c.96.96.5 2.61-.84 3l-1.08.31a1.8 1.8 0 00-1.23 1.8l.03 1.1c.04 1.36-1.39 2.19-2.55 1.46l-.93-.59a1.8 1.8 0 00-2.08 0l-.93.59c-1.16.73-2.59-.1-2.55-1.46l.03-1.1a1.8 1.8 0 00-1.23-1.8l-1.08-.31c-1.34-.39-1.8-2.04-.84-3l.79-.79a1.8 1.8 0 00.23-2.17l-.58-.91c-.72-1.15.17-2.62 1.52-2.45l1.1.14a1.8 1.8 0 001.9-1.07l.44-1.01z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                    </svg>
+                </button>
+
+                <div class="settings-menu" id="settingsMenu">
+                    <div class="settings-menu-label">Оформление</div>
+                    <button type="button" class="settings-item" id="themeToggleBtn">
+                        <div class="settings-item-left"><span id="themeToggleEmoji">🌙</span> <span id="themeToggleText">Переключить тему</span></div>
+                        <span class="settings-status" id="themeStatusLabel">Тёмная</span>
+                    </button>
+
+                    <div class="settings-menu-label">Уведомления</div>
+                    <button type="button" class="settings-item" id="enablePushBtn">
+                        <div class="settings-item-left">🔔 <span>Push-уведомления</span></div>
+                        <span class="settings-status" id="pushStatusLabel">Проверка...</span>
+                    </button>
+
+                    <div class="settings-menu-label">Аккаунт</div>
+                    <a href="/logout/" class="settings-link">
+                        <div class="settings-item-left">🚪 <span>Выйти</span></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="dialogSearch" placeholder="Поиск по чатам...">
+        </div>
+
+        <div class="dialogs" id="dialogsList">
+            {% for dialog in dialogs %}
+                <a
+                    href="{% url 'dialog_detail' dialog.id %}"
+                    class="dialog-item {% if current_dialog and current_dialog.id == dialog.id %}active{% endif %} {% if dialog.unread > 0 %}has-new{% endif %}"
+                    data-name="{{ dialog.name|lower }}"
+                    data-preview="{{ dialog.last_message|lower }}"
+                >
+                    <div class="dialog-top">
+                        <div class="dialog-left">
+                            <div class="dialog-avatar">{{ dialog.name|slice:":1"|upper }}</div>
+                            <div class="dialog-name">{{ dialog.name }}</div>
+                        </div>
+
+                        <div class="dialog-right">
+                            {% if dialog.unread > 0 %}
+                                <span class="unread-badge">{{ dialog.unread }}</span>
+                            {% endif %}
+                            <div class="dialog-time">{{ dialog.last_message_time }}</div>
+                        </div>
+                    </div>
+
+                    <div class="dialog-preview">
+                        {{ dialog.last_message|default:"Нет сообщений" }}
+                    </div>
+                </a>
+            {% empty %}
+                <div class="dialog-item">
+                    <div class="dialog-name">Нет диалогов</div>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <main class="main">
+        {% if current_dialog %}
+            <div class="main-header">
+                <a href="/" class="back-link">←</a>
+                <div class="main-header-text">
+                    <div class="main-title" id="mainDialogTitle">{{ current_dialog.name }}</div>
+                    <div class="main-subtitle" id="mainDialogSubtitle">
+                        {% if current_dialog.status %}{{ current_dialog.status }}{% endif %}
+                    </div>
+                    <div id="typingIndicator" class="typing-indicator"></div>
+                </div>
+            </div>
+
+            <div class="chat" id="chat">
+                {% for message in messages %}
+                    <div class="message-row {% if message.real_sender == request.user %}my{% else %}other{% endif %}" data-message-id="{{ message.id }}" data-displayed-sender-id="{{ message.displayed_sender.id|default:'' }}">
+                        <div class="message {% if request.user.role == 'admin' or message.real_sender == request.user %}has-menu{% endif %}">
+                            {% if request.user.role == 'admin' or message.real_sender == request.user %}
+                                <div class="message-menu-wrapper">
+                                    <button type="button" class="menu-trigger" data-menu-trigger="{{ message.id }}">⋯</button>
+                                    <div class="message-dropdown" id="message-menu-{{ message.id }}">
+                                        {% if request.user.role == 'admin' or message.real_sender == request.user %}
+                                            <button type="button" data-edit-message="{{ message.id }}" data-message-text="{{ message.text|default:''|urlencode }}">✏️ Изменить</button>
+                                            <button type="button" class="danger-item" data-delete-message="{{ message.id }}">🗑 Удалить</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if message.real_sender == request.user %}
+                                <div class="meta">{{ message.displayed_sender.username }}</div>
+                            {% else %}
+                                <div class="meta">{{ message.displayed_sender.username }} • {{ message.created_at|time }}</div>
+                            {% endif %}
+
+                            {% if message.text %}
+                                <div class="message-body-inline">
+                                    <span class="message-text">{{ message.text }}</span>
+                                    {% if message.real_sender == request.user %}
+                                        <span class="message-status-line">
+                                            <span class="message-time-inline">{{ message.created_at|time }}</span>
+                                            <span class="message-checks {% if message.is_read %}read{% endif %}">{% if message.is_read %}✓✓{% else %}✓{% endif %}</span>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                            {% for attachment in message.attachments.all %}
+                                <div class="file">
+                                    {% if attachment.is_image %}
+                                        <img src="{{ attachment.file.url }}" class="chat-image" alt="{{ attachment.filename }}" loading="lazy">
+                                    {% elif attachment.is_audio %}
+                                        <div>{{ attachment.filename }}</div>
+                                        <audio controls preload="metadata">
+                                            <source src="{{ attachment.file.url }}">
+                                        </audio>
+                                    {% else %}
+                                        <a href="{{ attachment.file.url }}" target="_blank" rel="noopener noreferrer">📎 {{ attachment.filename }}</a>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" class="scroll-to-bottom-btn" id="scrollToBottomBtn" aria-label="Прокрутить вниз" title="Вниз">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v12m0 0l-5-5m5 5l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="scroll-bottom-count" id="scrollBottomCount">0</span>
+            </button>
+
+            <div class="input-area">
+                <form method="post" enctype="multipart/form-data" id="messageForm">
+                    {% csrf_token %}
+
+                    <div id="selectedFilesPreview" class="selected-files-preview"></div>
+
+                    <div class="composer">
+                        <label for="fileInput" class="attach-btn" title="Прикрепить файл">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M21.44 11.05l-8.49 8.49a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 115.66 5.66l-9.2 9.19a2 2 0 11-2.82-2.83l8.49-8.48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </label>
+
+                        <textarea name="text" id="messageInput" placeholder="Введите сообщение..."></textarea>
+
+                        <button type="submit" class="send-icon-btn" title="Отправить">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 20L21 12L3 4L3 10L15 12L3 14L3 20Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <input type="file" name="file" id="fileInput" class="hidden-file-input" multiple accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                    <div id="selectedFileName" class="selected-file-name"></div>
+                </form>
+            </div>
+        {% else %}
+            <div class="main-header">
+                <div class="main-header-text">
+                    <div class="main-title">Чаты</div>
+                    <div class="main-subtitle"></div>
+                </div>
+            </div>
+            <div class="chat">
+                <div class="empty-chat">Выбери диалог, чтобы открыть переписку</div>
+            </div>
+        {% endif %}
+    </main>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<div class="image-viewer" id="imageViewer">
+    <div class="image-viewer-content">
+        <button type="button" class="image-viewer-close" id="imageViewerClose">×</button>
+        <img src="" alt="" id="imageViewerImg">
+    </div>
+</div>
+
+<audio id="notificationSound" preload="auto" playsinline>
+    <source src="{% static 'sounds/notification.mp3' %}" type="audio/mpeg">
+</audio>
+
+<script id="chat-config" type="application/json">
+{
+    "currentDialogId": {% if current_dialog %}{{ current_dialog.id }}{% else %}null{% endif %},
+    "currentUserId": {{ request.user.id }},
+    "currentUserRole": "{{ request.user.role|escapejs }}",
+    "isAdmin": {% if request.user.role == 'admin' %}true{% else %}false{% endif %},
+    "vapidPublicKey": "{{ vapid_public_key|default:''|escapejs }}",
+    "defaultPageTitle": "RepetitorLite"
+}
+</script>
+
+<script type="module" src="{% static 'js/chat/app.js' %}"></script>
+</body>
+</html>

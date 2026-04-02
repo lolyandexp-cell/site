@@ -151,7 +151,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 ASGI_APPLICATION = 'config.asgi.application'
 STATIC_ROOT = BASE_DIR / "staticfiles"

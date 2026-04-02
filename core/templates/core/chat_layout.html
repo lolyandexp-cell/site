@@ -626,7 +626,7 @@
 
     .message {
         max-width: min(640px, 72%);
-        padding: 16px 18px 14px;
+        padding: 16px 18px 22px;
         border-radius: 22px;
         box-shadow: var(--shadow-sm);
         word-break: break-word;
@@ -641,6 +641,8 @@
         background: var(--message-me-bg);
         border-bottom-right-radius: 8px;
         border-color: var(--message-me-border);
+        padding-right: 72px;
+        padding-bottom: 24px;
     }
 
     .message-row.other .message {
@@ -703,19 +705,29 @@
         display: block;
     }
 
-    .message-footer {
-        display: flex;
-        justify-content: flex-end;
+    .message-status-line {
+        position: absolute;
+        right: 14px;
+        bottom: 8px;
+        display: inline-flex;
         align-items: center;
-        margin-top: 8px;
-        min-height: 16px;
+        gap: 4px;
+        font-size: 11px;
+        line-height: 1;
+        user-select: none;
+        white-space: nowrap;
+    }
+
+    .message-time-inline {
+        color: var(--message-status);
+        opacity: 0.95;
     }
 
     .message-checks {
-        font-size: 13px;
+        font-size: 12px;
         line-height: 1;
         font-weight: 800;
-        letter-spacing: -0.08em;
+        letter-spacing: -0.10em;
         color: var(--message-status);
         user-select: none;
     }
@@ -1197,6 +1209,18 @@
         .main-title { font-size: 20px; }
         .chat { padding: 12px 10px 10px; gap: 10px; }
         .message { max-width: 90%; font-size: 14px; padding: 12px 13px; }
+        .message-row.my .message {
+            padding-right: 66px;
+            padding-bottom: 22px;
+        }
+        .message-status-line {
+            right: 12px;
+            bottom: 7px;
+            font-size: 10px;
+        }
+        .message-checks {
+            font-size: 11px;
+        }
         .input-area { padding: 8px 10px max(8px, env(safe-area-inset-bottom, 0px)); }
 
         .attach-btn,
@@ -1324,9 +1348,15 @@
                 {% for message in messages %}
                     <div class="message-row {% if message.real_sender == request.user %}my{% else %}other{% endif %}" data-message-id="{{ message.id }}" data-displayed-sender-id="{{ message.displayed_sender.id|default:'' }}">
                         <div class="message {% if request.user.role == 'admin' or message.real_sender == request.user %}has-menu{% endif %}">
-                            <div class="meta">
-                                {{ message.displayed_sender.username }} • {{ message.created_at|time }}
-                            </div>
+                            {% if message.real_sender == request.user %}
+                                <div class="meta">
+                                    {{ message.displayed_sender.username }}
+                                </div>
+                            {% else %}
+                                <div class="meta">
+                                    {{ message.displayed_sender.username }} • {{ message.created_at|time }}
+                                </div>
+                            {% endif %}
 
                             {% if message.text %}
                                 <div class="message-text">{{ message.text }}</div>
@@ -1346,6 +1376,15 @@
                                     {% endif %}
                                 </div>
                             {% endfor %}
+
+                            {% if message.real_sender == request.user %}
+                                <div class="message-status-line">
+                                    <span class="message-time-inline">{{ message.created_at|time }}</span>
+                                    <span class="message-checks {% if message.is_read %}read{% endif %}">
+                                        {% if message.is_read %}✓✓{% else %}✓{% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -1361,16 +1400,6 @@
             <div class="input-area">
                 <form method="post" enctype="multipart/form-data" id="messageForm">
                     {% csrf_token %}
-
-                    {% if request.user.role == 'admin' %}
-                        <select name="displayed_sender" class="admin-select" id="displayedSenderSelect" style="max-width:340px;padding:12px 14px;border-radius:14px;border:1px solid var(--field-border);background:var(--field-bg);color:var(--text);outline:none;transition:0.18s ease;">
-                            {% for member in members %}
-                                <option value="{{ member.user.id }}">
-                                    {{ member.user.username }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    {% endif %}
 
                     <div id="selectedFilesPreview" class="selected-files-preview"></div>
 
@@ -2126,8 +2155,15 @@ function editMessage(messageId, encodedText) {
     .catch(err => console.error(err));
 }
 
-function renderChecks(isRead) {
-    return `<div class="message-footer"><span class="message-checks ${isRead ? 'read' : ''}">${isRead ? '✓✓' : '✓'}</span></div>`;
+function renderChecks(isRead, time) {
+    return `
+        <div class="message-status-line">
+            <span class="message-time-inline">${escapeHtml(time || '')}</span>
+            <span class="message-checks ${isRead ? 'read' : ''}">
+                ${isRead ? '✓✓' : '✓'}
+            </span>
+        </div>
+    `;
 }
 
 function renderMessage(msg, prevMsg = null) {
@@ -2164,9 +2200,19 @@ function renderMessage(msg, prevMsg = null) {
         `;
     }
 
+    let metaHtml = '';
+
+    if (!isSameSender) {
+        if (msg.is_me) {
+            metaHtml = `<div class="meta">${escapeHtml(msg.sender)}</div>`;
+        } else {
+            metaHtml = `<div class="meta">${escapeHtml(msg.sender)} • ${escapeHtml(msg.time)}</div>`;
+        }
+    }
+
     let html = `
         ${menuHtml}
-        ${!isSameSender ? `<div class="meta">${escapeHtml(msg.sender)} • ${escapeHtml(msg.time)}</div>` : ''}
+        ${metaHtml}
         ${msg.text ? `<div class="message-text">${escapeHtml(msg.text)}</div>` : ''}
     `;
 
@@ -2184,7 +2230,7 @@ function renderMessage(msg, prevMsg = null) {
     });
 
     if (msg.is_me) {
-        html += renderChecks(!!msg.is_read);
+        html += renderChecks(!!msg.is_read, msg.time);
     }
 
     message.innerHTML = html;

@@ -655,7 +655,6 @@
         background: var(--message-me-bg);
         border-bottom-right-radius: 8px;
         border-color: var(--message-me-border);
-        padding-right: 18px;
     }
 
     .message-row.other .message {
@@ -1283,17 +1282,18 @@
             min-width: 0;
         }
 
-        .message-menu-wrapper {
-            top: 8px;
-            right: 8px;
+        .message-row.my .message-menu-wrapper {
+            left: 8px;
+            right: auto;
         }
 
-        .message.has-menu {
-            padding-right: 56px;
+        .message-row.my .message.has-menu {
+            padding-left: 52px;
+            padding-right: 18px;
         }
 
-        .message.has-menu .message-status-line {
-            margin-right: 36px;
+        .message-row.my .message.has-menu .message-status-line {
+            margin-right: 0;
         }
     }
 </style>

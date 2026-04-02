@@ -32,22 +32,28 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#039;');
     }
 
-    function enrichMessagePermissions(msg) {
-        const enriched = { ...msg };
+    function normalizeMessage(msg) {
+        const realSenderId = Number(
+            msg.real_sender_id ||
+            msg.sender_id ||
+            (msg.real_sender && msg.real_sender.id) ||
+            0
+        ) || null;
 
-        if (typeof enriched.is_me === 'undefined') {
-            enriched.is_me = Number(enriched.real_sender_id) === Number(currentUserId);
-        }
+        const isMe = typeof msg.is_me !== 'undefined'
+            ? !!msg.is_me
+            : (realSenderId !== null && currentUserId !== null && realSenderId === currentUserId);
 
-        if (typeof enriched.can_edit === 'undefined') {
-            enriched.can_edit = isAdmin || Number(enriched.real_sender_id) === Number(currentUserId);
-        }
+        const canManage = isAdmin || isMe;
 
-        if (typeof enriched.can_delete === 'undefined') {
-            enriched.can_delete = isAdmin || Number(enriched.real_sender_id) === Number(currentUserId);
-        }
-
-        return enriched;
+        return {
+            ...msg,
+            real_sender_id: realSenderId,
+            is_me: isMe,
+            can_edit: typeof msg.can_edit !== 'undefined' ? !!msg.can_edit : canManage,
+            can_delete: typeof msg.can_delete !== 'undefined' ? !!msg.can_delete : canManage,
+            is_read: !!msg.is_read,
+        };
     }
 
     function closeAllMessageMenus() {
@@ -146,7 +152,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function renderMessage(msg, prevMsg = null) {
+    function renderMessage(rawMsg, prevMsg = null) {
+        const msg = normalizeMessage(rawMsg);
+
         const row = document.createElement('div');
         row.className = 'message-row ' + (msg.is_me ? 'my' : 'other');
         row.setAttribute('data-message-id', msg.id);
@@ -186,12 +194,18 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        const senderName =
+            msg.sender ||
+            msg.sender_username ||
+            msg.sender_display_name ||
+            'Пользователь';
+
         let metaHtml = '';
         if (!isSameSender) {
             if (msg.is_me) {
-                metaHtml = `<div class="meta">${escapeHtml(msg.sender)}</div>`;
+                metaHtml = `<div class="meta">${escapeHtml(senderName)}</div>`;
             } else {
-                metaHtml = `<div class="meta">${escapeHtml(msg.sender)} • ${escapeHtml(msg.time)}</div>`;
+                metaHtml = `<div class="meta">${escapeHtml(senderName)} • ${escapeHtml(msg.time || '')}</div>`;
             }
         }
 
@@ -237,6 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
             sender: msg.sender || '',
             displayed_sender_id: msg.displayed_sender_id || '',
             is_read: !!msg.is_read,
+            can_edit: !!msg.can_edit,
+            can_delete: !!msg.can_delete,
             attachments: (msg.attachments || []).map(a => ({
                 url: a.url,
                 name: a.name,
@@ -246,7 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })).join('|');
     }
 
-    function updateExistingMessage(msg) {
+    function updateExistingMessage(rawMsg) {
+        const msg = normalizeMessage(rawMsg);
         const row = chat.querySelector(`.message-row[data-message-id="${msg.id}"]`);
         if (!row) return false;
 
@@ -269,8 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    function appendMessage(msg) {
-        msg = enrichMessagePermissions(msg);
+    function appendMessage(rawMsg) {
+        const msg = normalizeMessage(rawMsg);
 
         const rows = Array.from(chat.querySelectorAll('.message-row'));
         const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
@@ -296,10 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) throw new Error('Ошибка загрузки сообщений');
 
             const data = await res.json();
-            const messages = (data.messages || []).map(msg => enrichMessagePermissions({
-                ...msg,
-                is_read: !!msg.is_read
-            }));
+            const messages = (data.messages || []).map(msg => normalizeMessage(msg));
 
             const newSignature = buildMessagesSignature(messages);
             if (lastRenderedMessageSignature === newSignature) {
@@ -311,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 existingRows.map(row => Number(row.getAttribute('data-message-id')))
             );
 
-            // если чат пустой или IDs сильно разошлись — мягкая полная сборка
             if (!existingRows.length) {
                 const fragment = document.createDocumentFragment();
                 messages.forEach((msg, index) => {
@@ -323,14 +336,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // сначала обновляем существующие
             messages.forEach(msg => {
                 if (existingIds.has(Number(msg.id))) {
                     updateExistingMessage(msg);
                 }
             });
 
-            // потом добавляем новые
             messages.forEach(msg => {
                 if (!existingIds.has(Number(msg.id))) {
                     appendMessage(msg);
@@ -379,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.ChatMessages = {
         getCookie,
         escapeHtml,
+        normalizeMessage,
         closeAllMessageMenus,
         toggleMessageMenuById,
         deleteMessage,

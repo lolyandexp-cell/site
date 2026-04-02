@@ -33,18 +33,25 @@ class Dialog(models.Model):
         TEACHER_STUDENT = 'teacher_student', 'Репетитор ↔ Ученик'
         ADMIN_PARENT = 'admin_parent', 'Админ ↔ Родитель'
         ADMIN_TEACHER = 'admin_teacher', 'Админ ↔ Репетитор'
+        GROUP_CHAT = 'group_chat', 'Беседа'
 
     group = models.ForeignKey(StudyGroup, on_delete=models.CASCADE)
     dialog_type = models.CharField(max_length=50, choices=DialogType.choices)
+    name = models.CharField(max_length=255, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.dialog_type} (Group {self.group.id})'
+        if self.dialog_type == self.DialogType.GROUP_CHAT and self.name:
+            return self.name
+        return f'{self.get_dialog_type_display()} (Group {self.group.id})'
 
 
 class DialogMember(models.Model):
     dialog = models.ForeignKey(Dialog, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('dialog', 'user')
 
     def __str__(self):
         return f'{self.user} in dialog {self.dialog.id}'

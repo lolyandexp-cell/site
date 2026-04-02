@@ -162,7 +162,11 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+
+    html, body {
+        height: 100%;
+        min-height: 100%;
+    }
 
     body {
         margin: 0;
@@ -170,13 +174,18 @@
         color: var(--text);
         background: var(--page-bg);
         overflow: hidden;
+        min-height: 100vh;
+        min-height: 100dvh;
     }
 
     a, button, input, textarea, select { font: inherit; }
 
     .app {
         display: flex;
+        height: 100vh;
         height: 100dvh;
+        min-height: 100vh;
+        min-height: 100dvh;
         width: 100%;
         position: relative;
     }
@@ -455,9 +464,10 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+        min-height: 0;
         background: var(--main-bg);
         position: relative;
-        height: 100dvh;
+        height: 100%;
     }
 
     .main::before {
@@ -522,7 +532,7 @@
     .chat {
         flex: 1;
         overflow-y: auto;
-        padding: 24px 24px 0;
+        padding: 24px 24px 12px;
         display: flex;
         flex-direction: column;
         gap: 14px;
@@ -547,9 +557,12 @@
     .message-row {
         display: flex;
         width: 100%;
-        animation: fadeInUp 0.18s ease;
         position: relative;
         z-index: 1;
+    }
+
+    .message-row.new-message {
+        animation: fadeInUp 0.18s ease;
     }
 
     .message-row.menu-open { z-index: 50; }
@@ -659,6 +672,10 @@
         letter-spacing: 0.01em;
     }
 
+    .message-content-inline {
+        display: inline;
+    }
+
     .message-text {
         font-size: 15px;
         line-height: 1.55;
@@ -709,27 +726,33 @@
     .message-status-line {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         font-size: 11px;
         line-height: 1;
         user-select: none;
         white-space: nowrap;
-        margin-left: 6px;
+        margin-left: 8px;
         vertical-align: baseline;
     }
 
     .message-time-inline {
         color: var(--message-status);
         opacity: 0.95;
+        font-variant-numeric: tabular-nums;
     }
 
     .message-checks {
+        display: inline-flex;
+        align-items: center;
         font-size: 12px;
         line-height: 1;
         font-weight: 800;
-        letter-spacing: -0.10em;
+        letter-spacing: -0.04em;
         color: var(--message-status);
         user-select: none;
+        padding-left: 2px;
+        min-width: 14px;
+        justify-content: center;
     }
 
     .message-checks.read {
@@ -758,15 +781,15 @@
     }
 
     .input-area {
-        position: relative;
-        bottom: auto;
-        z-index: 2;
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
         background: var(--input-bg);
         flex-shrink: 0;
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
         border-top: 1px solid var(--input-border);
-        padding: 10px 16px 8px;
+        padding: 10px 16px calc(8px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.04);
     }
 
@@ -1179,8 +1202,8 @@
         }
 
         body.chat-open .sidebar { display: none; }
-        .main { display: none; height: 100dvh; }
-        body.chat-open .main { display: flex; height: 100dvh; }
+        .main { display: none; height: 100%; min-height: 0; }
+        body.chat-open .main { display: flex; height: 100%; min-height: 0; }
 
         .back-link {
             display: inline-flex;
@@ -1215,12 +1238,16 @@
         }
         .message-status-line {
             font-size: 10px;
-            margin-left: 5px;
+            margin-left: 6px;
+            gap: 4px;
         }
         .message-checks {
             font-size: 11px;
+            min-width: 13px;
         }
-        .input-area { padding: 8px 10px max(8px, env(safe-area-inset-bottom, 0px)); }
+        .input-area {
+            padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+        }
 
         .attach-btn,
         .send-icon-btn {
@@ -1358,7 +1385,24 @@
                             {% endif %}
 
                             {% if message.text %}
-                                <div class="message-text">{{ message.text }}</div>
+                                <div class="message-content-inline">
+                                    <span class="message-text">{{ message.text }}</span>
+                                    {% if message.real_sender == request.user %}
+                                        <span class="message-status-line">
+                                            <span class="message-time-inline">{{ message.created_at|time }}</span>
+                                            <span class="message-checks {% if message.is_read %}read{% endif %}">
+                                                {% if message.is_read %}✓✓{% else %}✓{% endif %}
+                                            </span>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% elif message.real_sender == request.user %}
+                                <div class="message-status-line">
+                                    <span class="message-time-inline">{{ message.created_at|time }}</span>
+                                    <span class="message-checks {% if message.is_read %}read{% endif %}">
+                                        {% if message.is_read %}✓✓{% else %}✓{% endif %}
+                                    </span>
+                                </div>
                             {% endif %}
 
                             {% for attachment in message.attachments.all %}
@@ -1375,15 +1419,6 @@
                                     {% endif %}
                                 </div>
                             {% endfor %}
-
-                            {% if message.real_sender == request.user %}
-                                <div class="message-status-line">
-                                    <span class="message-time-inline">{{ message.created_at|time }}</span>
-                                    <span class="message-checks {% if message.is_read %}read{% endif %}">
-                                        {% if message.is_read %}✓✓{% else %}✓{% endif %}
-                                    </span>
-                                </div>
-                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
@@ -1893,6 +1928,20 @@ let pendingNewMessagesCount = 0;
 let newMessagesDivider = null;
 let selectedFilesBuffer = [];
 
+function updateViewportHeightVar() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--app-vh', `${vh}px`);
+}
+
+updateViewportHeightVar();
+window.addEventListener('resize', updateViewportHeightVar);
+window.addEventListener('orientationchange', updateViewportHeightVar);
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateViewportHeightVar);
+    window.visualViewport.addEventListener('scroll', updateViewportHeightVar);
+}
+
 function updateScrollButtonVisibility() {
     if (!chat || !scrollToBottomBtn) return;
     scrollToBottomBtn.classList.toggle('visible', !isUserNearBottom && chat.scrollHeight > chat.clientHeight + 100);
@@ -2030,9 +2079,10 @@ socket.onmessage = function(e) {
         const existing = document.querySelector(`[data-message-id="${msg.id}"]`);
         if (existing) return;
 
-        const lastMessageEl = chat ? chat.lastElementChild : null;
-        let prevMsg = null;
+        const rows = chat ? Array.from(chat.querySelectorAll('.message-row')) : [];
+        const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
 
+        let prevMsg = null;
         if (lastMessageEl) {
             prevMsg = {
                 displayed_sender_id: Number(lastMessageEl.getAttribute('data-displayed-sender-id')),
@@ -2043,7 +2093,8 @@ socket.onmessage = function(e) {
         const wasNearBottom = isUserNearBottom;
         if (chat) {
             if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
-            chat.appendChild(renderMessage(msg, prevMsg));
+            const node = renderMessage(msg, prevMsg, true);
+            chat.appendChild(node);
         }
 
         if (wasNearBottom || msg.is_me) {
@@ -2055,7 +2106,11 @@ socket.onmessage = function(e) {
 
         if (!msg.is_me) playNotificationSound();
         loadDialogs();
-        loadMessages();
+
+        const signaturesNeedRefresh = msg.attachments && msg.attachments.length > 0;
+        if (signaturesNeedRefresh) {
+            lastRenderedMessageSignature = null;
+        }
     }
 };
 
@@ -2156,18 +2211,19 @@ function editMessage(messageId, encodedText) {
 
 function renderChecks(isRead, time) {
     return `
-        <div class="message-status-line">
+        <span class="message-status-line">
             <span class="message-time-inline">${escapeHtml(time || '')}</span>
             <span class="message-checks ${isRead ? 'read' : ''}">
                 ${isRead ? '✓✓' : '✓'}
             </span>
-        </div>
+        </span>
     `;
 }
 
-function renderMessage(msg, prevMsg = null) {
+function renderMessage(msg, prevMsg = null, isNew = false) {
     const row = document.createElement('div');
     row.className = 'message-row ' + (msg.is_me ? 'my' : 'other');
+    if (isNew) row.classList.add('new-message');
     row.setAttribute('data-message-id', msg.id);
     row.setAttribute('data-displayed-sender-id', msg.displayed_sender_id || '');
 
@@ -2212,8 +2268,18 @@ function renderMessage(msg, prevMsg = null) {
     let html = `
         ${menuHtml}
         ${metaHtml}
-        ${msg.text ? `<div class="message-text">${escapeHtml(msg.text)}</div>` : ''}
     `;
+
+    if (msg.text) {
+        html += `
+            <div class="message-content-inline">
+                <span class="message-text">${escapeHtml(msg.text)}</span>
+                ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
+            </div>
+        `;
+    } else if (msg.is_me) {
+        html += renderChecks(!!msg.is_read, msg.time);
+    }
 
     (msg.attachments || []).forEach(a => {
         const safeUrl = escapeHtml(a.url);
@@ -2227,10 +2293,6 @@ function renderMessage(msg, prevMsg = null) {
             html += `<div class="file"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">📎 ${safeName}</a></div>`;
         }
     });
-
-    if (msg.is_me) {
-        html += renderChecks(!!msg.is_read, msg.time);
-    }
 
     message.innerHTML = html;
     row.appendChild(message);
@@ -2276,14 +2338,15 @@ function loadMessages() {
             }
 
             const wasNearBottom = isUserNearBottom;
-            chat.innerHTML = '';
+            const fragment = document.createDocumentFragment();
             removeNewMessagesDivider();
 
             messages.forEach((msg, index) => {
                 const prevMsg = index > 0 ? messages[index - 1] : null;
-                chat.appendChild(renderMessage(msg, prevMsg));
+                fragment.appendChild(renderMessage(msg, prevMsg, false));
             });
 
+            chat.replaceChildren(fragment);
             lastRenderedMessageSignature = newSignature;
 
             if (wasNearBottom) {
@@ -2503,11 +2566,6 @@ function sendMessageAjax() {
         scrollChatToBottom(true);
         focusMessageInput();
 
-        setTimeout(() => {
-            lastRenderedMessageSignature = null;
-            loadMessages();
-        }, 400);
-
         return;
     }
 
@@ -2611,8 +2669,8 @@ if (chat) {
 }
 
 setInterval(() => {
-    loadMessages();
-}, 5000);
+    if (!document.hidden) loadMessages();
+}, 15000);
 </script>
 {% endif %}
 

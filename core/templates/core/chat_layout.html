@@ -626,13 +626,14 @@
 
     .message {
         max-width: min(640px, 72%);
-        padding: 16px 18px 22px;
+        padding: 16px 18px 16px;
         border-radius: 22px;
         box-shadow: var(--shadow-sm);
         word-break: break-word;
         position: relative;
         border: 1px solid var(--message-other-border);
         overflow: visible;
+        display: inline-block;
     }
 
     .message.has-menu { padding-right: 52px; }
@@ -641,8 +642,7 @@
         background: var(--message-me-bg);
         border-bottom-right-radius: 8px;
         border-color: var(--message-me-border);
-        padding-right: 72px;
-        padding-bottom: 24px;
+        padding-right: 18px;
     }
 
     .message-row.other .message {
@@ -663,6 +663,7 @@
         font-size: 15px;
         line-height: 1.55;
         white-space: pre-wrap;
+        display: inline;
     }
 
     .file { margin-top: 12px; }
@@ -706,9 +707,6 @@
     }
 
     .message-status-line {
-        position: absolute;
-        right: 14px;
-        bottom: 8px;
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -716,6 +714,8 @@
         line-height: 1;
         user-select: none;
         white-space: nowrap;
+        margin-left: 6px;
+        vertical-align: baseline;
     }
 
     .message-time-inline {
@@ -1210,13 +1210,12 @@
         .chat { padding: 12px 10px 10px; gap: 10px; }
         .message { max-width: 90%; font-size: 14px; padding: 12px 13px; }
         .message-row.my .message {
-            padding-right: 66px;
-            padding-bottom: 22px;
+            padding-right: 13px;
+            padding-bottom: 12px;
         }
         .message-status-line {
-            right: 12px;
-            bottom: 7px;
             font-size: 10px;
+            margin-left: 5px;
         }
         .message-checks {
             font-size: 11px;

@@ -755,155 +755,6 @@ function sendTyping() {
     }, 1200);
 }
 
-function renderChecks(isRead, time) {
-    return `
-        <span class="message-status-line">
-            <span class="message-time-inline">${escapeHtml(time || '')}</span>
-            <span class="message-checks ${isRead ? 'read' : ''}">
-                ${isRead ? '✓✓' : '✓'}
-            </span>
-        </span>
-    `;
-}
-
-function renderMessage(msg, prevMsg = null, isNew = false) {
-    const row = document.createElement('div');
-    row.className = 'message-row ' + (msg.is_me ? 'my' : 'other');
-    if (isNew) row.classList.add('new-message');
-    row.setAttribute('data-message-id', msg.id);
-    row.setAttribute('data-displayed-sender-id', msg.displayed_sender_id || '');
-
-    const message = document.createElement('div');
-    message.className = 'message';
-
-    const isSameSender = prevMsg && prevMsg.displayed_sender_id === msg.displayed_sender_id && prevMsg.is_me === msg.is_me;
-    if (msg.can_edit || msg.can_delete) message.classList.add('has-menu');
-
-    let menuHtml = '';
-    if (msg.can_edit || msg.can_delete) {
-        const encodedText = encodeURIComponent(msg.text || '');
-        menuHtml = `
-            <div class="message-menu-wrapper">
-                <button type="button" class="menu-trigger" data-menu-trigger="${msg.id}">⋯</button>
-                <div class="message-dropdown" id="message-menu-${msg.id}">
-                    ${msg.can_edit ? `
-                        <button type="button" data-edit-message="${msg.id}" data-message-text="${encodedText}">
-                            ✏️ Изменить
-                        </button>
-                    ` : ''}
-                    ${msg.can_delete ? `
-                        <button type="button" class="danger-item" data-delete-message="${msg.id}">
-                            🗑 Удалить
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }
-
-    let metaHtml = '';
-
-    if (!isSameSender) {
-        if (msg.is_me) {
-            metaHtml = `<div class="meta">${escapeHtml(msg.sender)}</div>`;
-        } else {
-            metaHtml = `<div class="meta">${escapeHtml(msg.sender)} • ${escapeHtml(msg.time)}</div>`;
-        }
-    }
-
-    let html = `
-        ${menuHtml}
-        ${metaHtml}
-    `;
-
-    if (msg.text) {
-        html += `
-            <div class="message-content-inline">
-                <span class="message-text">${escapeHtml(msg.text)}</span>
-                ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
-            </div>
-        `;
-    } else if (msg.is_me) {
-        html += renderChecks(!!msg.is_read, msg.time);
-    }
-
-    (msg.attachments || []).forEach(a => {
-        const safeUrl = escapeHtml(a.url);
-        const safeName = escapeHtml(a.name);
-
-        if (a.is_image) {
-            html += `<div class="file"><img src="${safeUrl}" class="chat-image" alt="${safeName}" loading="lazy"></div>`;
-        } else if (a.is_audio) {
-            html += `<div class="file"><div>${safeName}</div><audio controls preload="metadata" src="${safeUrl}"></audio></div>`;
-        } else {
-            html += `<div class="file"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">📎 ${safeName}</a></div>`;
-        }
-    });
-
-    message.innerHTML = html;
-    row.appendChild(message);
-    return row;
-}
-
-function buildMessagesSignature(messages) {
-    return messages.map(msg => JSON.stringify({
-        id: msg.id,
-        text: msg.text || '',
-        time: msg.time || '',
-        sender: msg.sender || '',
-        displayed_sender_id: msg.displayed_sender_id || '',
-        is_read: !!msg.is_read,
-        attachments: (msg.attachments || []).map(a => ({
-            url: a.url,
-            name: a.name,
-            is_image: !!a.is_image,
-            is_audio: !!a.is_audio
-        }))
-    })).join('|');
-}
-
-function loadMessages() {
-    fetch(`/api/dialogs/${dialogId}/messages/`)
-        .then(res => {
-            if (!res.ok) throw new Error('Ошибка загрузки сообщений');
-            return res.json();
-        })
-        .then(data => {
-            if (!chat) return;
-
-            const messages = (data.messages || []).map(msg => ({
-                ...msg,
-                is_read: !!msg.is_read
-            }));
-
-            const newSignature = buildMessagesSignature(messages);
-
-            if (lastRenderedMessageSignature === newSignature) {
-                updateScrollButtonVisibility();
-                return;
-            }
-
-            const wasNearBottom = isUserNearBottom;
-            const fragment = document.createDocumentFragment();
-            removeNewMessagesDivider();
-
-            messages.forEach((msg, index) => {
-                const prevMsg = index > 0 ? messages[index - 1] : null;
-                fragment.appendChild(renderMessage(msg, prevMsg, false));
-            });
-
-            chat.replaceChildren(fragment);
-            lastRenderedMessageSignature = newSignature;
-
-            if (wasNearBottom) {
-                scrollChatToBottom(true);
-            } else {
-                updateScrollButtonVisibility();
-            }
-        })
-        .catch(err => console.error(err));
-}
-
 function formatFileSize(bytes) {
     const size = Number(bytes || 0);
     if (!size) return '0 Б';
@@ -1079,7 +930,7 @@ function sendMessageAjax() {
             localStorage.removeItem(draftStorageKey);
             clearSelectedFiles();
             lastRenderedMessageSignature = null;
-            loadMessages();
+            window.ChatMessages?.loadMessages(dialogId);
             loadDialogs();
             scrollChatToBottom(true);
             focusMessageInput();
@@ -1138,8 +989,8 @@ function sendMessageAjax() {
         }
 
         localStorage.removeItem(draftStorageKey);
-        lastRenderedMessageSignature = null;
-        loadMessages();
+        window.ChatMessages?.resetSignature();
+        window.ChatMessages?.loadMessages(dialogId);
         loadDialogs();
         scrollChatToBottom(true);
         focusMessageInput();
@@ -1159,7 +1010,7 @@ if (fileInput) {
     });
 }
 
-loadMessages();
+window.ChatMessages?.loadMessages(dialogId);
 restoreDraft();
 syncMainDialogTitle();
 renderSelectedFilesPreview();
@@ -1215,7 +1066,7 @@ if (chat) {
 }
 
 setInterval(() => {
-    if (!document.hidden) loadMessages();
+    if (!document.hidden) window.ChatMessages?.loadMessages(dialogId);
 }, 15000);
 </script>
 {% endif %}

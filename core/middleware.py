@@ -1,5 +1,5 @@
-from django.utils import timezone
 from datetime import timedelta
+from django.utils import timezone
 
 
 class LastSeenMiddleware:
@@ -13,7 +13,8 @@ class LastSeenMiddleware:
         if user and user.is_authenticated:
             now = timezone.now()
 
-            if not user.last_seen or now - user.last_seen > timedelta(seconds=30):
+            # Обновляем чаще, чтобы статус "в сети" был живее
+            if not user.last_seen or now - user.last_seen > timedelta(seconds=10):
                 user.last_seen = now
                 user.save(update_fields=['last_seen'])
 

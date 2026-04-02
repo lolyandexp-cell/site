@@ -52,15 +52,14 @@ class DialogMember(models.Model):
 
 class Message(models.Model):
     dialog = models.ForeignKey(Dialog, on_delete=models.CASCADE)
-
     real_sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='real_messages')
     displayed_sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='displayed_messages')
-
     text = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'Message {self.id} in dialog {self.dialog.id}'
+
 
 class Attachment(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='attachments')
@@ -96,6 +95,7 @@ class Attachment(models.Model):
     def is_pdf(self):
         return self.extension == 'pdf'
 
+
 class MessageRead(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='reads')
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
@@ -104,18 +104,6 @@ class MessageRead(models.Model):
     class Meta:
         unique_together = ('message', 'user')
 
-
-class PushSubscription(models.Model):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='push_subscriptions')
-    endpoint = models.TextField(unique=True)
-    p256dh = models.TextField()
-    auth = models.TextField()
-    user_agent = models.TextField(blank=True, default='')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'PushSubscription({self.user_id})'
 
 class PushSubscription(models.Model):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='push_subscriptions')

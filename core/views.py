@@ -1,21 +1,41 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from .models import MessageRead
-from django.utils import timezone
+import json
 from datetime import timedelta
 
-from .models import DialogMember, Dialog, Message, Attachment, MessageRead
-
-import json
 from django.conf import settings
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import PushSubscription
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+
+from .models import (
+    DialogMember,
+    Dialog,
+    Message,
+    Attachment,
+    MessageRead,
+    PushSubscription,
+)
 
 typing_users = {}
 TYPING_TIMEOUT_SECONDS = 3
+
+
+def get_user_status(user):
+    if not getattr(user, 'last_seen', None):
+        return 'был давно'
+
+    now = timezone.now()
+    delta = now - user.last_seen
+
+    if delta <= timedelta(seconds=30):
+        return 'в сети'
+    elif delta <= timedelta(minutes=1):
+        return 'был только что'
+    elif delta <= timedelta(minutes=5):
+        return 'был недавно'
+    else:
+        return 'не в сети'
 
 
 def build_dialogs_for_user(user):
@@ -29,16 +49,24 @@ def build_dialogs_for_user(user):
     dialogs = []
     for dm in dialog_members:
         dialog = dm.dialog
-        members_for_name = dialog.dialogmember_set.select_related('user')
+        members_for_dialog = list(
+            dialog.dialogmember_set.select_related('user')
+        )
 
-        other_users = [
-            get_dialog_display_name(user, m.user)
-            for m in members_for_name
-            if m.user != user
+        other_members = [m for m in members_for_dialog if m.user != user]
+        other_users = [m.user for m in other_members]
+
+        other_names = [
+            get_dialog_display_name(user, other_user)
+            for other_user in other_users
         ]
 
-        if not other_users:
-            other_users = [dialog.get_dialog_type_display()]
+        if not other_names:
+            other_names = [dialog.get_dialog_type_display()]
+
+        dialog_status = ''
+        if len(other_users) == 1:
+            dialog_status = get_user_status(other_users[0])
 
         last_message = Message.objects.filter(dialog=dialog).select_related(
             'displayed_sender'
@@ -68,8 +96,9 @@ def build_dialogs_for_user(user):
 
         dialogs.append({
             'id': dialog.id,
-            'name': " / ".join(other_users),
+            'name': " / ".join(other_names),
             'type': dialog.get_dialog_type_display(),
+            'status': dialog_status,
             'last_message': last_message_text,
             'last_message_time': last_message_time,
             'last_message_timestamp': last_message_timestamp,
@@ -185,6 +214,8 @@ def get_messages(request, dialog_id):
                 'is_audio': a.is_audio,
             })
 
+        is_read = m.reads.exclude(user=request.user).exists()
+
         data.append({
             'id': m.id,
             'text': m.text,
@@ -192,6 +223,7 @@ def get_messages(request, dialog_id):
             'displayed_sender_id': m.displayed_sender_id,
             'real_sender_id': m.real_sender_id,
             'is_me': m.real_sender_id == request.user.id,
+            'is_read': is_read,
             'time': m.created_at.strftime('%H:%M'),
             'attachments': attachments,
             'can_delete': request.user.role == 'admin' or m.real_sender_id == request.user.id,
@@ -327,23 +359,6 @@ def edit_message(request, message_id):
             'text': message.text,
         }
     })
-
-
-def get_user_status(user):
-    if not user.last_seen:
-        return 'был давно'
-
-    now = timezone.now()
-    delta = now - user.last_seen
-
-    if delta <= timedelta(seconds=30):
-        return 'в сети'
-    elif delta <= timedelta(minutes=1):
-        return 'был только что'
-    elif delta <= timedelta(minutes=5):
-        return 'был недавно'
-    else:
-        return 'не в сети'
 
 
 @require_POST

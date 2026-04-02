@@ -86,6 +86,8 @@
         --preview-item-bg: rgba(248,250,252,0.95);
         --preview-item-border: rgba(226,232,240,0.95);
         --remove-btn-bg: rgba(15,23,42,0.76);
+        --message-status: rgba(71, 85, 105, 0.9);
+        --message-status-read: #2563eb;
     }
 
     body.theme-dark {
@@ -155,6 +157,8 @@
         --preview-item-bg: rgba(2, 6, 23, 0.92);
         --preview-item-border: #334155;
         --remove-btn-bg: rgba(2, 6, 23, 0.9);
+        --message-status: rgba(219, 234, 254, 0.85);
+        --message-status-read: #93c5fd;
     }
 
     * { box-sizing: border-box; }
@@ -501,6 +505,13 @@
         letter-spacing: -0.02em;
     }
 
+    .main-subtitle {
+        font-size: 13px;
+        color: var(--text-soft);
+        margin-top: 5px;
+        min-height: 18px;
+    }
+
     .typing-indicator {
         font-size: 12px;
         color: var(--text-soft);
@@ -607,6 +618,7 @@
     .message-dropdown button:hover { background: rgba(59, 130, 246, 0.08); }
     .message-dropdown .danger-item { color: #ef4444; }
     .message-dropdown .danger-item:hover { background: rgba(239, 68, 68, 0.10); }
+
     .message-row.my { justify-content: flex-end; }
     .message-row.my + .message-row.my .message { border-top-right-radius: 10px; }
     .message-row.other + .message-row.other .message { border-top-left-radius: 10px; }
@@ -689,6 +701,27 @@
         max-width: 100%;
         margin-top: 8px;
         display: block;
+    }
+
+    .message-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 8px;
+        min-height: 16px;
+    }
+
+    .message-checks {
+        font-size: 13px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.08em;
+        color: var(--message-status);
+        user-select: none;
+    }
+
+    .message-checks.read {
+        color: var(--message-status-read);
     }
 
     .new-messages-divider {
@@ -1280,6 +1313,9 @@
                 <a href="/" class="back-link">←</a>
                 <div class="main-header-text">
                     <div class="main-title" id="mainDialogTitle">{{ current_dialog.name }}</div>
+                    <div class="main-subtitle" id="mainDialogSubtitle">
+                        {% if current_dialog.status %}{{ current_dialog.status }}{% endif %}
+                    </div>
                     <div id="typingIndicator" class="typing-indicator"></div>
                 </div>
             </div>
@@ -1326,6 +1362,16 @@
                 <form method="post" enctype="multipart/form-data" id="messageForm">
                     {% csrf_token %}
 
+                    {% if request.user.role == 'admin' %}
+                        <select name="displayed_sender" class="admin-select" id="displayedSenderSelect" style="max-width:340px;padding:12px 14px;border-radius:14px;border:1px solid var(--field-border);background:var(--field-bg);color:var(--text);outline:none;transition:0.18s ease;">
+                            {% for member in members %}
+                                <option value="{{ member.user.id }}">
+                                    {{ member.user.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+
                     <div id="selectedFilesPreview" class="selected-files-preview"></div>
 
                     <div class="composer">
@@ -1352,6 +1398,7 @@
             <div class="main-header">
                 <div class="main-header-text">
                     <div class="main-title">Чаты</div>
+                    <div class="main-subtitle"></div>
                 </div>
             </div>
             <div class="chat">
@@ -1719,6 +1766,16 @@ function renderDialogItem(d) {
     return el;
 }
 
+function updateCurrentDialogHeaderFromDialogs(dialogs) {
+    const subtitle = document.getElementById('mainDialogSubtitle');
+    if (!subtitle || !currentDialogId) return;
+
+    const current = (dialogs || []).find(d => Number(d.id) === Number(currentDialogId));
+    if (!current) return;
+
+    subtitle.textContent = current.status || '';
+}
+
 function loadDialogs() {
     fetch('/api/dialogs/')
         .then(res => res.json())
@@ -1732,7 +1789,8 @@ function loadDialogs() {
                 unread: d.unread,
                 last_message: d.last_message,
                 last_message_time: d.last_message_time,
-                name: d.name
+                name: d.name,
+                status: d.status || ''
             })));
 
             let shouldPlaySound = false;
@@ -1764,6 +1822,8 @@ function loadDialogs() {
                 if (typeof syncMainDialogTitle === 'function') syncMainDialogTitle();
             }
 
+            updateCurrentDialogHeaderFromDialogs(dialogs);
+
             if (shouldPlaySound) playNotificationSound();
             if (totalUnread > 0) startTitleBlink(totalUnread); else stopTitleBlink();
 
@@ -1784,6 +1844,7 @@ const dialogId = {{ current_dialog.id }};
 const messageInput = document.getElementById('messageInput');
 const messageForm = document.getElementById('messageForm');
 const fileInput = document.getElementById('fileInput');
+const displayedSenderSelect = document.getElementById('displayedSenderSelect');
 const currentUserId = {{ request.user.id }};
 const currentUserRole = '{{ request.user.role }}';
 const isAdmin = {% if request.user.role == 'admin' %}true{% else %}false{% endif %};
@@ -1934,6 +1995,9 @@ socket.onmessage = function(e) {
         msg.is_me = msg.real_sender_id === currentUserId;
         msg.can_edit = isAdmin || msg.real_sender_id === currentUserId;
         msg.can_delete = isAdmin || msg.real_sender_id === currentUserId;
+        if (typeof msg.is_read === 'undefined') {
+            msg.is_read = false;
+        }
 
         const existing = document.querySelector(`[data-message-id="${msg.id}"]`);
         if (existing) return;
@@ -1963,6 +2027,7 @@ socket.onmessage = function(e) {
 
         if (!msg.is_me) playNotificationSound();
         loadDialogs();
+        loadMessages();
     }
 };
 
@@ -2061,6 +2126,10 @@ function editMessage(messageId, encodedText) {
     .catch(err => console.error(err));
 }
 
+function renderChecks(isRead) {
+    return `<div class="message-footer"><span class="message-checks ${isRead ? 'read' : ''}">${isRead ? '✓✓' : '✓'}</span></div>`;
+}
+
 function renderMessage(msg, prevMsg = null) {
     const row = document.createElement('div');
     row.className = 'message-row ' + (msg.is_me ? 'my' : 'other');
@@ -2114,6 +2183,10 @@ function renderMessage(msg, prevMsg = null) {
         }
     });
 
+    if (msg.is_me) {
+        html += renderChecks(!!msg.is_read);
+    }
+
     message.innerHTML = html;
     row.appendChild(message);
     return row;
@@ -2126,6 +2199,7 @@ function buildMessagesSignature(messages) {
         time: msg.time || '',
         sender: msg.sender || '',
         displayed_sender_id: msg.displayed_sender_id || '',
+        is_read: !!msg.is_read,
         attachments: (msg.attachments || []).map(a => ({
             url: a.url,
             name: a.name,
@@ -2144,7 +2218,11 @@ function loadMessages() {
         .then(data => {
             if (!chat) return;
 
-            const messages = data.messages || [];
+            const messages = (data.messages || []).map(msg => ({
+                ...msg,
+                is_read: !!msg.is_read
+            }));
+
             const newSignature = buildMessagesSignature(messages);
 
             if (lastRenderedMessageSignature === newSignature) {
@@ -2325,6 +2403,10 @@ function sendMessageAjax() {
             formData.append('file', file);
         }
 
+        if (displayedSenderSelect) {
+            formData.append('displayed_sender', displayedSenderSelect.value);
+        }
+
         fetch(`/api/dialogs/${dialogId}/send/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -2356,10 +2438,16 @@ function sendMessageAjax() {
     if (!text) return;
 
     if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
+        const payload = {
             type: 'message',
             message: text
-        }));
+        };
+
+        if (displayedSenderSelect) {
+            payload.displayed_sender = displayedSenderSelect.value;
+        }
+
+        socket.send(JSON.stringify(payload));
 
         if (messageInput) {
             messageInput.value = '';
@@ -2369,11 +2457,21 @@ function sendMessageAjax() {
         localStorage.removeItem(draftStorageKey);
         scrollChatToBottom(true);
         focusMessageInput();
+
+        setTimeout(() => {
+            lastRenderedMessageSignature = null;
+            loadMessages();
+        }, 400);
+
         return;
     }
 
     const formData = new FormData();
     formData.append('text', text);
+
+    if (displayedSenderSelect) {
+        formData.append('displayed_sender', displayedSenderSelect.value);
+    }
 
     fetch(`/api/dialogs/${dialogId}/send/`, {
         method: 'POST',
@@ -2466,6 +2564,10 @@ if (chat) {
         addFilesToSelection(files, true);
     });
 }
+
+setInterval(() => {
+    loadMessages();
+}, 5000);
 </script>
 {% endif %}
 

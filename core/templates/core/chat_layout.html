@@ -406,29 +406,6 @@ function applyDialogFilter() {
 
 if (searchInput) searchInput.addEventListener('input', applyDialogFilter);
 
-function openImageViewer(src, alt) {
-    if (!imageViewer || !imageViewerImg || !src) return;
-    imageViewerImg.src = src;
-    imageViewerImg.alt = alt || '';
-    imageViewer.classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeImageViewer() {
-    if (!imageViewer || !imageViewerImg) return;
-    imageViewer.classList.remove('open');
-    imageViewerImg.src = '';
-    imageViewerImg.alt = '';
-    document.body.style.overflow = '';
-}
-
-document.addEventListener('click', function(event) {
-    const target = event.target;
-    if (target && target.classList && target.classList.contains('chat-image')) {
-        openImageViewer(target.src, target.alt);
-    }
-});
-
 if (imageViewerClose) imageViewerClose.addEventListener('click', closeImageViewer);
 
 if (imageViewer) {
@@ -436,13 +413,6 @@ if (imageViewer) {
         if (event.target === imageViewer) closeImageViewer();
     });
 }
-
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeImageViewer();
-        closeSettingsMenu();
-    }
-});
 
 function renderDialogItem(d) {
     const unread = Number(d.unread || 0);
@@ -1455,5 +1425,6 @@ if ('serviceWorker' in navigator) {
 </script>
 <script src="{% static 'js/ui.js' %}"></script>
 <script src="{% static 'js/theme.js' %}"></script>
+<script src="{% static 'js/viewer.js' %}"></script>
 </body>
 </html>

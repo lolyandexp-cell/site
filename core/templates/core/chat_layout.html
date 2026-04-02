@@ -284,8 +284,6 @@ applySavedTheme();
 </script>
 
 <script>
-const settingsTrigger = document.getElementById('settingsTrigger');
-const settingsMenu = document.getElementById('settingsMenu');
 const searchInput = document.getElementById('dialogSearch');
 const notificationSound = document.getElementById('notificationSound');
 const toastContainer = document.getElementById('toastContainer');
@@ -303,31 +301,6 @@ let previousDialogSnapshotString = '';
 let titleBlinkInterval = null;
 let titleBlinkCount = 0;
 
-function openSettingsMenu() {
-    if (settingsMenu) settingsMenu.classList.add('open');
-}
-
-function closeSettingsMenu() {
-    if (settingsMenu) settingsMenu.classList.remove('open');
-}
-
-if (settingsTrigger) {
-    settingsTrigger.addEventListener('click', function(event) {
-        event.stopPropagation();
-        if (settingsMenu && settingsMenu.classList.contains('open')) {
-            closeSettingsMenu();
-        } else {
-            openSettingsMenu();
-        }
-    });
-}
-
-document.addEventListener('click', function(event) {
-    if (!settingsMenu || !settingsTrigger) return;
-    if (!settingsMenu.contains(event.target) && !settingsTrigger.contains(event.target)) {
-        closeSettingsMenu();
-    }
-});
 
 function unlockNotificationSound() {
     if (!notificationSound || soundUnlocked) return;
@@ -1527,5 +1500,6 @@ if ('serviceWorker' in navigator) {
     updatePushStatusLabel();
 }
 </script>
+<script src="{% static 'js/ui.js' %}"></script>
 </body>
 </html>

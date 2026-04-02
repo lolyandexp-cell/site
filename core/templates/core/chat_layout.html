@@ -784,15 +784,15 @@ function renderMessage(msg, prevMsg = null, isNew = false) {
         const encodedText = encodeURIComponent(msg.text || '');
         menuHtml = `
             <div class="message-menu-wrapper">
-                <button type="button" class="menu-trigger" onclick="toggleMessageMenu(event, ${msg.id})">⋯</button>
+                <button type="button" class="menu-trigger" data-menu-trigger="${msg.id}">⋯</button>
                 <div class="message-dropdown" id="message-menu-${msg.id}">
                     ${msg.can_edit ? `
-                        <button type="button" onclick="editMessage(${msg.id}, '${encodedText}'); closeAllMessageMenus();">
+                        <button type="button" data-edit-message="${msg.id}" data-message-text="${encodedText}">
                             ✏️ Изменить
                         </button>
                     ` : ''}
                     ${msg.can_delete ? `
-                        <button type="button" class="danger-item" onclick="deleteMessage(${msg.id}); closeAllMessageMenus();">
+                        <button type="button" class="danger-item" data-delete-message="${msg.id}">
                             🗑 Удалить
                         </button>
                     ` : ''}

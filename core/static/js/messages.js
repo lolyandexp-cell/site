@@ -1,11 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const chat = document.getElementById('chat');
-    if (!chat) return;
-
-    const messageInput = document.getElementById('messageInput');
-    const currentUserIdMeta = document.body.dataset.currentUserId || '';
-    const currentUserId = currentUserIdMeta ? Number(currentUserIdMeta) : null;
-
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -21,15 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return cookieValue;
     }
 
-    function escapeHtml(value) {
-        return String(value || '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
     function closeAllMessageMenus() {
         document.querySelectorAll('.message-dropdown.open').forEach(menu => {
             menu.classList.remove('open');
@@ -39,8 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function toggleMessageMenu(event, messageId) {
-        event.stopPropagation();
+    function toggleMessageMenuById(messageId) {
         const menu = document.getElementById(`message-menu-${messageId}`);
         if (!menu) return;
 
@@ -115,21 +98,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', function(event) {
         const trigger = event.target.closest('[data-menu-trigger]');
         if (trigger) {
+            event.stopPropagation();
             const messageId = trigger.getAttribute('data-menu-trigger');
-            toggleMessageMenu(event, messageId);
-            return;
-        }
-
-        const deleteBtn = event.target.closest('[data-delete-message]');
-        if (deleteBtn) {
-            const messageId = deleteBtn.getAttribute('data-delete-message');
-            closeAllMessageMenus();
-            deleteMessage(messageId);
+            toggleMessageMenuById(messageId);
             return;
         }
 
         const editBtn = event.target.closest('[data-edit-message]');
         if (editBtn) {
+            event.stopPropagation();
             const messageId = editBtn.getAttribute('data-edit-message');
             const messageText = editBtn.getAttribute('data-message-text') || '';
             closeAllMessageMenus();
@@ -137,20 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const deleteBtn = event.target.closest('[data-delete-message]');
+        if (deleteBtn) {
+            event.stopPropagation();
+            const messageId = deleteBtn.getAttribute('data-delete-message');
+            closeAllMessageMenus();
+            deleteMessage(messageId);
+            return;
+        }
+
         if (!event.target.closest('.message-menu-wrapper')) {
             closeAllMessageMenus();
         }
     });
-
-    window.ChatMessages = {
-        closeAllMessageMenus,
-        toggleMessageMenu,
-        deleteMessage,
-        editMessage,
-        escapeHtml,
-        getCookie,
-        currentUserId,
-        messageInput,
-        chat
-    };
 });

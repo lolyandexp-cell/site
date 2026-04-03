@@ -146,7 +146,7 @@ if (chat) {
         `;
     }
 
-    function renderMessage(rawMsg, prevMsg = null) {
+   function renderMessage(rawMsg, prevMsg = null) {
         const msg = normalizeMessage(rawMsg);
 
         const row = document.createElement('div');
@@ -157,12 +157,73 @@ if (chat) {
         const message = document.createElement('div');
         message.className = 'message';
 
+        if (msg.can_edit || msg.can_delete) {
+            message.classList.add('has-menu');
+        }
+
+        let menuHtml = '';
+        if (msg.can_edit || msg.can_delete) {
+            const encodedText = encodeURIComponent(msg.text || '');
+            menuHtml = `
+                <div class="message-menu-wrapper">
+                    <button type="button" class="menu-trigger" data-menu-trigger="${msg.id}">⋯</button>
+                    <div class="message-dropdown" id="message-menu-${msg.id}">
+                        ${msg.can_edit ? `
+                            <button type="button" data-edit-message="${msg.id}" data-message-text="${encodedText}">
+                                ✏️ Изменить
+                            </button>
+                        ` : ''}
+                        ${msg.can_delete ? `
+                            <button type="button" class="danger-item" data-delete-message="${msg.id}">
+                                🗑 Удалить
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        const senderName =
+            msg.sender_display_name ||
+            msg.sender_username ||
+            msg.sender ||
+            'Пользователь';
+
+        let metaHtml = '';
+        if (msg.is_me) {
+            metaHtml = `<div class="meta">${escapeHtml(senderName)}</div>`;
+        } else {
+            metaHtml = `<div class="meta">${escapeHtml(senderName)} • ${escapeHtml(msg.time || '')}</div>`;
+        }
+
         let html = `
-            <div class="message-content-inline">
-                <span class="message-text">${escapeHtml(msg.text)}</span>
-                ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
-            </div>
+            ${menuHtml}
+            ${metaHtml}
         `;
+
+        if (msg.text) {
+            html += `
+                <div class="message-content-inline">
+                    <span class="message-text">${escapeHtml(msg.text)}</span>
+                    ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
+                </div>
+            `;
+        } else if (msg.is_me) {
+            html += renderChecks(!!msg.is_read, msg.time);
+        }
+
+        (msg.attachments || []).forEach(a => {
+            const safeUrl = escapeHtml(a.url);
+            const safeName = escapeHtml(a.name);
+
+            if (a.is_image) {
+                html += `<div class="file"><img src="${safeUrl}" class="chat-image" alt="${safeName}" loading="lazy"></div>`;
+            } else if (a.is_audio) {
+                html += `<div class="file"><div>${safeName}</div><audio controls preload="metadata" src="${safeUrl}"></audio></div>`;
+            } else {
+                html += `<div class="file"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">📎 ${safeName}</a></div>`;
+            }
+        });
 
         message.innerHTML = html;
         row.appendChild(message);

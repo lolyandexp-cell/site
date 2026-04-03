@@ -129,11 +129,6 @@ if (chat) {
                 textNode.textContent = trimmedText;
             }
 
-            const editBtn = row?.querySelector('[data-edit-message]');
-            if (editBtn) {
-                editBtn.setAttribute('data-message-text', encodeURIComponent(trimmedText));
-            }
-
             lastRenderedMessageSignature = null;
         } catch (err) {
             console.error(err);
@@ -162,244 +157,78 @@ if (chat) {
         const message = document.createElement('div');
         message.className = 'message';
 
-        const isSameSender =
-            prevMsg &&
-            prevMsg.displayed_sender_id === msg.displayed_sender_id &&
-            prevMsg.is_me === msg.is_me;
-
-        if (msg.can_edit || msg.can_delete) {
-            message.classList.add('has-menu');
-        }
-
-        let menuHtml = '';
-        if (msg.can_edit || msg.can_delete) {
-            const encodedText = encodeURIComponent(msg.text || '');
-            menuHtml = `
-                <div class="message-menu-wrapper">
-                    <button type="button" class="menu-trigger" data-menu-trigger="${msg.id}">⋯</button>
-                    <div class="message-dropdown" id="message-menu-${msg.id}">
-                        ${msg.can_edit ? `
-                            <button type="button" data-edit-message="${msg.id}" data-message-text="${encodedText}">
-                                ✏️ Изменить
-                            </button>
-                        ` : ''}
-                        ${msg.can_delete ? `
-                            <button type="button" class="danger-item" data-delete-message="${msg.id}">
-                                🗑 Удалить
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        const senderName =
-            msg.sender ||
-            msg.sender_username ||
-            msg.sender_display_name ||
-            'Пользователь';
-
-        let metaHtml = '';
-        if (!isSameSender) {
-            if (msg.is_me) {
-                metaHtml = `<div class="meta">${escapeHtml(senderName)}</div>`;
-            } else {
-                metaHtml = `<div class="meta">${escapeHtml(senderName)} • ${escapeHtml(msg.time || '')}</div>`;
-            }
-        }
-
         let html = `
-            ${menuHtml}
-            ${metaHtml}
+            <div class="message-content-inline">
+                <span class="message-text">${escapeHtml(msg.text)}</span>
+                ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
+            </div>
         `;
-
-        if (msg.text) {
-            html += `
-                <div class="message-content-inline">
-                    <span class="message-text">${escapeHtml(msg.text)}</span>
-                    ${msg.is_me ? renderChecks(!!msg.is_read, msg.time) : ''}
-                </div>
-            `;
-        } else if (msg.is_me) {
-            html += renderChecks(!!msg.is_read, msg.time);
-        }
-
-        (msg.attachments || []).forEach(a => {
-            const safeUrl = escapeHtml(a.url);
-            const safeName = escapeHtml(a.name);
-
-            if (a.is_image) {
-                html += `<div class="file"><img src="${safeUrl}" class="chat-image" alt="${safeName}" loading="lazy"></div>`;
-            } else if (a.is_audio) {
-                html += `<div class="file"><div>${safeName}</div><audio controls preload="metadata" src="${safeUrl}"></audio></div>`;
-            } else {
-                html += `<div class="file"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">📎 ${safeName}</a></div>`;
-            }
-        });
 
         message.innerHTML = html;
         row.appendChild(message);
         return row;
     }
 
-    function buildMessagesSignature(messages) {
-        return messages.map(msg => JSON.stringify({
-            id: msg.id,
-            text: msg.text || '',
-            time: msg.time || '',
-            sender: msg.sender || '',
-            displayed_sender_id: msg.displayed_sender_id || '',
-            is_read: !!msg.is_read,
-            can_edit: !!msg.can_edit,
-            can_delete: !!msg.can_delete,
-            attachments: (msg.attachments || []).map(a => ({
-                url: a.url,
-                name: a.name,
-                is_image: !!a.is_image,
-                is_audio: !!a.is_audio
-            }))
-        })).join('|');
-    }
-
-    function updateExistingMessage(rawMsg) {
-        const msg = normalizeMessage(rawMsg);
-        const row = chat.querySelector(`.message-row[data-message-id="${msg.id}"]`);
-        if (!row) return false;
-
-        const textNode = row.querySelector('.message-text');
-        if (textNode && typeof msg.text !== 'undefined') {
-            textNode.textContent = msg.text || '';
-        }
-
-        const checks = row.querySelector('.message-checks');
-        if (checks) {
-            checks.textContent = msg.is_read ? '✓✓' : '✓';
-            checks.classList.toggle('read', !!msg.is_read);
-        }
-
-        const editBtn = row.querySelector('[data-edit-message]');
-        if (editBtn) {
-            editBtn.setAttribute('data-message-text', encodeURIComponent(msg.text || ''));
-        }
-
-        return true;
-    }
-
-    function appendMessage(rawMsg) {
-        const msg = normalizeMessage(rawMsg);
-
-        const rows = Array.from(chat.querySelectorAll('.message-row'));
-        const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
-
-        let prevMsg = null;
-        if (lastMessageEl) {
-            prevMsg = {
-                displayed_sender_id: Number(lastMessageEl.getAttribute('data-displayed-sender-id')),
-                is_me: lastMessageEl.classList.contains('my')
-            };
-        }
-
-        const node = renderMessage(msg, prevMsg);
+    function appendMessage(msg) {
+        const node = renderMessage(msg);
         chat.appendChild(node);
-        return node;
     }
 
     async function loadMessages(dialogId) {
-        if (!dialogId) return;
+        const res = await fetch(`/api/dialogs/${dialogId}/messages/`);
+        const data = await res.json();
 
-        try {
-            const res = await fetch(`/api/dialogs/${dialogId}/messages/`);
-            if (!res.ok) throw new Error('Ошибка загрузки сообщений');
-
-            const data = await res.json();
-            const messages = (data.messages || []).map(msg => normalizeMessage(msg));
-
-            const newSignature = buildMessagesSignature(messages);
-            if (lastRenderedMessageSignature === newSignature) return;
-
-            const existingRows = Array.from(chat.querySelectorAll('.message-row'));
-            const existingIds = new Set(
-                existingRows.map(row => Number(row.getAttribute('data-message-id')))
-            );
-
-            if (!existingRows.length) {
-                const fragment = document.createDocumentFragment();
-                messages.forEach((msg, index) => {
-                    const prevMsg = index > 0 ? messages[index - 1] : null;
-                    fragment.appendChild(renderMessage(msg, prevMsg));
-                });
-                chat.replaceChildren(fragment);
-                lastRenderedMessageSignature = newSignature;
-                return;
-            }
-
-            messages.forEach(msg => {
-                if (existingIds.has(Number(msg.id))) {
-                    updateExistingMessage(msg);
-                }
-            });
-
-            messages.forEach(msg => {
-                if (!existingIds.has(Number(msg.id))) {
-                    appendMessage(msg);
-                }
-            });
-
-            lastRenderedMessageSignature = newSignature;
-        } catch (err) {
-            console.error(err);
-        }
+        chat.innerHTML = '';
+        (data.messages || []).forEach(msg => appendMessage(msg));
     }
 
-    document.addEventListener('click', function(event) {
-        const trigger = event.target.closest('[data-menu-trigger]');
-        if (trigger) {
-            event.stopPropagation();
-            const messageId = trigger.getAttribute('data-menu-trigger');
-            toggleMessageMenuById(messageId);
+    // =========================
+    // 🔥 ОТПРАВКА СООБЩЕНИЙ
+    // =========================
+
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+
+    function sendMessage() {
+        if (!messageInput) return;
+
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        if (!window.chatSocket || window.chatSocket.readyState !== WebSocket.OPEN) {
+            console.log('Socket not ready');
             return;
         }
 
-        const editBtn = event.target.closest('[data-edit-message]');
-        if (editBtn) {
-            event.stopPropagation();
-            const messageId = editBtn.getAttribute('data-edit-message');
-            const messageText = editBtn.getAttribute('data-message-text') || '';
-            closeAllMessageMenus();
-            editMessage(messageId, messageText);
-            return;
-        }
+        window.chatSocket.send(JSON.stringify({
+            type: 'message',
+            message: text
+        }));
 
-        const deleteBtn = event.target.closest('[data-delete-message]');
-        if (deleteBtn) {
-            event.stopPropagation();
-            const messageId = deleteBtn.getAttribute('data-delete-message');
-            closeAllMessageMenus();
-            deleteMessage(messageId);
-            return;
-        }
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+    }
 
-        if (!event.target.closest('.message-menu-wrapper')) {
-            closeAllMessageMenus();
-        }
-    });
+    if (messageForm) {
+        messageForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            sendMessage();
+        });
+    }
+
+    if (messageInput) {
+        messageInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    // =========================
 
     window.ChatMessages = {
-        getCookie,
-        escapeHtml,
-        normalizeMessage,
-        closeAllMessageMenus,
-        toggleMessageMenuById,
-        deleteMessage,
-        editMessage,
-        renderChecks,
-        renderMessage,
-        buildMessagesSignature,
         loadMessages,
-        updateExistingMessage,
-        appendMessage,
-        resetSignature() {
-            lastRenderedMessageSignature = null;
-        }
+        appendMessage
     };
 }

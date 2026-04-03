@@ -539,7 +539,7 @@ setInterval(loadDialogs, 5000);
 
 {% if current_dialog %}
 <script>
-const chat = document.getElementById('chat');
+const chatBox = document.getElementById('chat');
 const dialogId = {{ current_dialog.id }};
 const messageInput = document.getElementById('messageInput');
 const messageForm = document.getElementById('messageForm');
@@ -652,11 +652,15 @@ function focusMessageInput() {
     messageInput.setSelectionRange(length, length);
 }
 
-if (chat) {
-    chat.addEventListener('scroll', () => {
+if (chatBox) {
+    chatBox.addEventListener('scroll', () => {
         const threshold = 100;
-        isUserNearBottom = chat.scrollHeight - chat.scrollTop - chat.clientHeight < threshold;
-        if (isUserNearBottom) resetPendingNewMessages(); else updateScrollButtonVisibility();
+        isUserNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < threshold;
+        if (isUserNearBottom) {
+            resetPendingNewMessages();
+        } else {
+            updateScrollButtonVisibility();
+        }
     });
 }
 

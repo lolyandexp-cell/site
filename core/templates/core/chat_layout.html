@@ -656,6 +656,12 @@ if (chatBox) {
     chatBox.addEventListener('scroll', () => {
         const threshold = 100;
         isUserNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < threshold;
+
+        // 🔥 подгрузка старых сообщений
+        if (chatBox.scrollTop < 120) {
+            window.ChatMessages?.loadOlderMessages(dialogId);
+        }
+
         if (isUserNearBottom) {
             resetPendingNewMessages();
         } else {

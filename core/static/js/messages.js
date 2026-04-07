@@ -6,6 +6,9 @@ if (chat) {
     const isAdmin = body?.dataset.isAdmin === 'true';
 
     let lastRenderedMessageSignature = null;
+    let oldestMessageId = null;
+    let hasMoreOlderMessages = true;
+    let isLoadingOlderMessages = false;
 
     function getCookie(name) {
         let cookieValue = null;
@@ -129,6 +132,11 @@ if (chat) {
                 textNode.textContent = trimmedText;
             }
 
+            const editBtn = row?.querySelector('[data-edit-message]');
+            if (editBtn) {
+                editBtn.setAttribute('data-message-text', encodeURIComponent(trimmedText));
+            }
+
             lastRenderedMessageSignature = null;
         } catch (err) {
             console.error(err);
@@ -146,7 +154,7 @@ if (chat) {
         `;
     }
 
-   function renderMessage(rawMsg, prevMsg = null) {
+    function renderMessage(rawMsg, prevMsg = null) {
         const msg = normalizeMessage(rawMsg);
 
         const row = document.createElement('div');
@@ -156,6 +164,11 @@ if (chat) {
 
         const message = document.createElement('div');
         message.className = 'message';
+
+        const isSameSender =
+            prevMsg &&
+            prevMsg.displayed_sender_id === msg.displayed_sender_id &&
+            prevMsg.is_me === msg.is_me;
 
         if (msg.can_edit || msg.can_delete) {
             message.classList.add('has-menu');
@@ -184,16 +197,18 @@ if (chat) {
         }
 
         const senderName =
-            msg.sender_display_name ||
-            msg.sender_username ||
             msg.sender ||
+            msg.sender_username ||
+            msg.sender_display_name ||
             'Пользователь';
 
         let metaHtml = '';
-        if (msg.is_me) {
-            metaHtml = `<div class="meta">${escapeHtml(senderName)}</div>`;
-        } else {
-            metaHtml = `<div class="meta">${escapeHtml(senderName)} • ${escapeHtml(msg.time || '')}</div>`;
+        if (!isSameSender) {
+            if (msg.is_me) {
+                metaHtml = `<div class="meta">${escapeHtml(senderName)}</div>`;
+            } else {
+                metaHtml = `<div class="meta">${escapeHtml(senderName)} • ${escapeHtml(msg.time || '')}</div>`;
+            }
         }
 
         let html = `
@@ -230,66 +245,184 @@ if (chat) {
         return row;
     }
 
-    function appendMessage(msg) {
-        const node = renderMessage(msg);
+    function buildMessagesSignature(messages) {
+        return messages.map(msg => JSON.stringify({
+            id: msg.id,
+            text: msg.text || '',
+            time: msg.time || '',
+            sender: msg.sender || '',
+            displayed_sender_id: msg.displayed_sender_id || '',
+            is_read: !!msg.is_read,
+            can_edit: !!msg.can_edit,
+            can_delete: !!msg.can_delete,
+            attachments: (msg.attachments || []).map(a => ({
+                url: a.url,
+                name: a.name,
+                is_image: !!a.is_image,
+                is_audio: !!a.is_audio
+            }))
+        })).join('|');
+    }
+
+    function updateExistingMessage(rawMsg) {
+        const msg = normalizeMessage(rawMsg);
+        const row = chat.querySelector(`.message-row[data-message-id="${msg.id}"]`);
+        if (!row) return false;
+
+        const textNode = row.querySelector('.message-text');
+        if (textNode && typeof msg.text !== 'undefined') {
+            textNode.textContent = msg.text || '';
+        }
+
+        const checks = row.querySelector('.message-checks');
+        if (checks) {
+            checks.textContent = msg.is_read ? '✓✓' : '✓';
+            checks.classList.toggle('read', !!msg.is_read);
+        }
+
+        const editBtn = row.querySelector('[data-edit-message]');
+        if (editBtn) {
+            editBtn.setAttribute('data-message-text', encodeURIComponent(msg.text || ''));
+        }
+
+        return true;
+    }
+
+    function appendMessage(rawMsg) {
+        const msg = normalizeMessage(rawMsg);
+
+        const rows = Array.from(chat.querySelectorAll('.message-row'));
+        const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
+
+        let prevMsg = null;
+        if (lastMessageEl) {
+            prevMsg = {
+                displayed_sender_id: Number(lastMessageEl.getAttribute('data-displayed-sender-id')),
+                is_me: lastMessageEl.classList.contains('my')
+            };
+        }
+
+        const node = renderMessage(msg, prevMsg);
         chat.appendChild(node);
+        return node;
     }
 
     async function loadMessages(dialogId) {
-        const res = await fetch(`/api/dialogs/${dialogId}/messages/`);
-        const data = await res.json();
+        if (!dialogId) return;
 
-        chat.innerHTML = '';
-        (data.messages || []).forEach(msg => appendMessage(msg));
+        try {
+            const res = await fetch(`/api/dialogs/${dialogId}/messages/?limit=30`);
+            if (!res.ok) throw new Error('Ошибка загрузки сообщений');
+
+            const data = await res.json();
+            const messages = (data.messages || []).map(msg => normalizeMessage(msg));
+
+            const fragment = document.createDocumentFragment();
+            messages.forEach((msg, index) => {
+                const prevMsg = index > 0 ? messages[index - 1] : null;
+                fragment.appendChild(renderMessage(msg, prevMsg));
+            });
+
+            chat.replaceChildren(fragment);
+
+            oldestMessageId = messages.length ? messages[0].id : null;
+            hasMoreOlderMessages = !!data.has_more;
+            lastRenderedMessageSignature = buildMessagesSignature(messages);
+        } catch (err) {
+            console.error(err);
+        }
     }
 
-    // =========================
-    // 🔥 ОТПРАВКА СООБЩЕНИЙ
-    // =========================
+    async function loadOlderMessages(dialogId) {
+        if (!dialogId || !oldestMessageId || !hasMoreOlderMessages || isLoadingOlderMessages) return;
 
-    const messageForm = document.getElementById('messageForm');
-    const messageInput = document.getElementById('messageInput');
+        isLoadingOlderMessages = true;
 
-    function sendMessage() {
-        if (!messageInput) return;
+        try {
+            const previousScrollHeight = chat.scrollHeight;
 
-        const text = messageInput.value.trim();
-        if (!text) return;
+            const res = await fetch(`/api/dialogs/${dialogId}/messages/?limit=30&before_id=${oldestMessageId}`);
+            if (!res.ok) throw new Error('Ошибка подгрузки старых сообщений');
 
-        if (!window.chatSocket || window.chatSocket.readyState !== WebSocket.OPEN) {
-            console.log('Socket not ready');
+            const data = await res.json();
+            const messages = (data.messages || []).map(msg => normalizeMessage(msg));
+
+            if (!messages.length) {
+                hasMoreOlderMessages = false;
+                isLoadingOlderMessages = false;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            messages.forEach((msg, index) => {
+                const prevMsg = index > 0 ? messages[index - 1] : null;
+                fragment.appendChild(renderMessage(msg, prevMsg));
+            });
+
+            chat.prepend(fragment);
+
+            oldestMessageId = messages[0].id;
+            hasMoreOlderMessages = !!data.has_more;
+
+            const newScrollHeight = chat.scrollHeight;
+            chat.scrollTop += newScrollHeight - previousScrollHeight;
+        } catch (err) {
+            console.error(err);
+        } finally {
+            isLoadingOlderMessages = false;
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        const trigger = event.target.closest('[data-menu-trigger]');
+        if (trigger) {
+            event.stopPropagation();
+            const messageId = trigger.getAttribute('data-menu-trigger');
+            toggleMessageMenuById(messageId);
             return;
         }
 
-        window.chatSocket.send(JSON.stringify({
-            type: 'message',
-            message: text
-        }));
+        const editBtn = event.target.closest('[data-edit-message]');
+        if (editBtn) {
+            event.stopPropagation();
+            const messageId = editBtn.getAttribute('data-edit-message');
+            const messageText = editBtn.getAttribute('data-message-text') || '';
+            closeAllMessageMenus();
+            editMessage(messageId, messageText);
+            return;
+        }
 
-        messageInput.value = '';
-        messageInput.style.height = 'auto';
-    }
+        const deleteBtn = event.target.closest('[data-delete-message]');
+        if (deleteBtn) {
+            event.stopPropagation();
+            const messageId = deleteBtn.getAttribute('data-delete-message');
+            closeAllMessageMenus();
+            deleteMessage(messageId);
+            return;
+        }
 
-    if (messageForm) {
-        messageForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            sendMessage();
-        });
-    }
-
-    if (messageInput) {
-        messageInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-    }
-
-    // =========================
+        if (!event.target.closest('.message-menu-wrapper')) {
+            closeAllMessageMenus();
+        }
+    });
 
     window.ChatMessages = {
+        getCookie,
+        escapeHtml,
+        normalizeMessage,
+        closeAllMessageMenus,
+        toggleMessageMenuById,
+        deleteMessage,
+        editMessage,
+        renderChecks,
+        renderMessage,
+        buildMessagesSignature,
         loadMessages,
-        appendMessage
+        loadOlderMessages,
+        updateExistingMessage,
+        appendMessage,
+        resetSignature() {
+            lastRenderedMessageSignature = null;
+        }
     };
 }

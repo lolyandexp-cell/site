@@ -165,10 +165,13 @@ def dialog_detail(request, dialog_id):
     if other_member and not (dialog.name and dialog.name.strip()):
         current_dialog_status = get_user_status(other_member.user)
 
-    messages = Message.objects.filter(dialog=dialog).select_related(
-        'real_sender',
-        'displayed_sender'
-    ).prefetch_related('attachments').order_by('created_at')
+    # грузим только последние 30 сообщений для первичного HTML
+    messages = list(
+        Message.objects.filter(dialog=dialog)
+        .select_related('real_sender', 'displayed_sender')
+        .prefetch_related('attachments')
+        .order_by('-id')[:30]
+    )[::-1]
 
     current_dialog_name = get_dialog_display_name_for_user(request.user, dialog)
 
@@ -194,10 +197,29 @@ def get_messages(request, dialog_id):
     if not is_member:
         return JsonResponse({'error': 'forbidden'}, status=403)
 
-    messages = Message.objects.filter(dialog=dialog).select_related(
-        'real_sender',
-        'displayed_sender'
-    ).prefetch_related('attachments').order_by('created_at')
+    try:
+        limit = int(request.GET.get('limit', 30))
+    except (TypeError, ValueError):
+        limit = 30
+
+    limit = max(1, min(limit, 100))
+    before_id = request.GET.get('before_id')
+
+    messages_qs = (
+        Message.objects.filter(dialog=dialog)
+        .select_related('real_sender', 'displayed_sender')
+        .prefetch_related('attachments')
+        .order_by('-id')
+    )
+
+    if before_id:
+        try:
+            before_id = int(before_id)
+            messages_qs = messages_qs.filter(id__lt=before_id)
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'invalid_before_id'}, status=400)
+
+    messages = list(messages_qs[:limit])[::-1]
 
     for m in messages:
         MessageRead.objects.get_or_create(
@@ -205,13 +227,12 @@ def get_messages(request, dialog_id):
             user=request.user
         )
 
-    data = []
-
     def get_sender_name(viewer, sender):
         if viewer.role in ['student', 'parent']:
             return sender.display_name or sender.username
         return sender.username
 
+    data = []
     for m in messages:
         attachments = []
         for a in m.attachments.all():
@@ -238,7 +259,15 @@ def get_messages(request, dialog_id):
             'can_edit': request.user.role == 'admin' or m.real_sender_id == request.user.id,
         })
 
-    return JsonResponse({'messages': data})
+    has_more = False
+    if data:
+        oldest_loaded_id = data[0]['id']
+        has_more = Message.objects.filter(dialog=dialog, id__lt=oldest_loaded_id).exists()
+
+    return JsonResponse({
+        'messages': data,
+        'has_more': has_more,
+    })
 
 
 @login_required

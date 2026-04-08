@@ -544,7 +544,6 @@ const dialogId = {{ current_dialog.id }};
 const messageInput = document.getElementById('messageInput');
 const messageForm = document.getElementById('messageForm');
 const fileInput = document.getElementById('fileInput');
-const displayedSenderSelect = document.getElementById('displayedSenderSelect');
 const currentUserId = {{ request.user.id }};
 const currentUserRole = '{{ request.user.role }}';
 const isAdmin = {% if request.user.role == 'admin' %}true{% else %}false{% endif %};
@@ -563,6 +562,7 @@ let typingThrottleTimeout = null;
 let pendingNewMessagesCount = 0;
 let newMessagesDivider = null;
 let selectedFilesBuffer = [];
+let olderMessagesLoadCooldown = false;
 
 function updateViewportHeightVar() {
     const vh = window.innerHeight * 0.01;
@@ -579,8 +579,8 @@ if (window.visualViewport) {
 }
 
 function updateScrollButtonVisibility() {
-    if (!chat || !scrollToBottomBtn) return;
-    scrollToBottomBtn.classList.toggle('visible', !isUserNearBottom && chat.scrollHeight > chat.clientHeight + 100);
+    if (!chatBox || !scrollToBottomBtn) return;
+    scrollToBottomBtn.classList.toggle('visible', !isUserNearBottom && chatBox.scrollHeight > chatBox.clientHeight + 100);
 
     if (scrollBottomCount) {
         scrollBottomCount.textContent = pendingNewMessagesCount > 99 ? '99+' : String(pendingNewMessagesCount);
@@ -596,9 +596,9 @@ function createNewMessagesDivider() {
 }
 
 function ensureNewMessagesDivider() {
-    if (!chat || newMessagesDivider) return;
+    if (!chatBox || newMessagesDivider) return;
     newMessagesDivider = createNewMessagesDivider();
-    chat.appendChild(newMessagesDivider);
+    chatBox.appendChild(newMessagesDivider);
 }
 
 function removeNewMessagesDivider() {
@@ -615,11 +615,11 @@ function resetPendingNewMessages() {
 }
 
 function scrollChatToBottom(force = false) {
-    if (!chat) return;
+    if (!chatBox) return;
     if (force) {
-        chat.scrollTop = chat.scrollHeight;
+        chatBox.scrollTop = chatBox.scrollHeight;
     } else {
-        chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
     }
     isUserNearBottom = true;
     resetPendingNewMessages();
@@ -657,9 +657,13 @@ if (chatBox) {
         const threshold = 100;
         isUserNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < threshold;
 
-        // 🔥 подгрузка старых сообщений
-        if (chatBox.scrollTop < 120) {
+        if (chatBox.scrollTop < 120 && !olderMessagesLoadCooldown) {
+            olderMessagesLoadCooldown = true;
             window.ChatMessages?.loadOlderMessages(dialogId);
+
+            setTimeout(() => {
+                olderMessagesLoadCooldown = false;
+            }, 250);
         }
 
         if (isUserNearBottom) {
@@ -726,7 +730,7 @@ socket.onmessage = function(e) {
         if (existing) return;
 
         const wasNearBottom = isUserNearBottom;
-        if (chat) {
+        if (chatBox) {
             if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
             window.ChatMessages?.appendMessage(msg);
         }
@@ -740,11 +744,6 @@ socket.onmessage = function(e) {
 
         if (!msg.is_me) playNotificationSound();
         loadDialogs();
-
-        const signaturesNeedRefresh = msg.attachments && msg.attachments.length > 0;
-        if (signaturesNeedRefresh) {
-            window.ChatMessages?.resetSignature();
-        }
     }
 };
 
@@ -920,10 +919,6 @@ function sendMessageAjax() {
             formData.append('file', file);
         }
 
-        if (displayedSenderSelect) {
-            formData.append('displayed_sender', displayedSenderSelect.value);
-        }
-
         fetch(`/api/dialogs/${dialogId}/send/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
@@ -941,11 +936,9 @@ function sendMessageAjax() {
 
             localStorage.removeItem(draftStorageKey);
             clearSelectedFiles();
-            window.ChatMessages?.resetSignature();
-            window.ChatMessages?.loadMessages(dialogId);
-            loadDialogs();
             scrollChatToBottom(true);
             focusMessageInput();
+            loadDialogs();
         })
         .catch(err => console.error(err));
 
@@ -960,10 +953,6 @@ function sendMessageAjax() {
             message: text
         };
 
-        if (displayedSenderSelect) {
-            payload.displayed_sender = displayedSenderSelect.value;
-        }
-
         socket.send(JSON.stringify(payload));
 
         if (messageInput) {
@@ -974,16 +963,11 @@ function sendMessageAjax() {
         localStorage.removeItem(draftStorageKey);
         scrollChatToBottom(true);
         focusMessageInput();
-
         return;
     }
 
     const formData = new FormData();
     formData.append('text', text);
-
-    if (displayedSenderSelect) {
-        formData.append('displayed_sender', displayedSenderSelect.value);
-    }
 
     fetch(`/api/dialogs/${dialogId}/send/`, {
         method: 'POST',
@@ -1001,11 +985,9 @@ function sendMessageAjax() {
         }
 
         localStorage.removeItem(draftStorageKey);
-        window.ChatMessages?.resetSignature();
-        window.ChatMessages?.loadMessages(dialogId);
-        loadDialogs();
         scrollChatToBottom(true);
         focusMessageInput();
+        loadDialogs();
     })
     .catch(err => console.error(err));
 }
@@ -1025,11 +1007,8 @@ if (fileInput) {
 restoreDraft();
 syncMainDialogTitle();
 renderSelectedFilesPreview();
-
-window.addEventListener('DOMContentLoaded', function() {
-    window.ChatMessages?.resetSignature();
-    window.ChatMessages?.loadMessages(dialogId);
-});
+window.ChatMessages?.resetSignature();
+window.ChatMessages?.loadMessages(dialogId);
 
 if (dialogsList) {
     const dialogsObserver = new MutationObserver(() => {
@@ -1066,12 +1045,12 @@ if (messageInput && messageForm) {
     });
 }
 
-if (chat) {
-    chat.addEventListener('dragover', e => {
+if (chatBox) {
+    chatBox.addEventListener('dragover', e => {
         e.preventDefault();
     });
 
-    chat.addEventListener('drop', e => {
+    chatBox.addEventListener('drop', e => {
         e.preventDefault();
 
         const files = e.dataTransfer.files;
@@ -1082,7 +1061,9 @@ if (chat) {
 }
 
 setInterval(() => {
-    if (!document.hidden) window.ChatMessages?.loadMessages(dialogId);
+    if (!document.hidden && (!socket || socket.readyState !== WebSocket.OPEN)) {
+        window.ChatMessages?.loadMessages(dialogId);
+    }
 }, 15000);
 </script>
 {% endif %}

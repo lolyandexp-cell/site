@@ -4,6 +4,7 @@ if (chat) {
     const body = document.getElementById('pageBody');
     const currentUserId = body?.dataset.currentUserId ? Number(body.dataset.currentUserId) : null;
     const isAdmin = body?.dataset.isAdmin === 'true';
+    const olderLoaderId = 'olderMessagesLoader';
 
     let lastRenderedMessageSignature = null;
     let oldestMessageId = null;
@@ -56,6 +57,40 @@ if (chat) {
             can_delete: typeof msg.can_delete !== 'undefined' ? !!msg.can_delete : canManage,
             is_read: !!msg.is_read,
         };
+    }
+
+    function ensureOlderLoader() {
+        let loader = document.getElementById(olderLoaderId);
+        if (loader) return loader;
+
+        loader = document.createElement('div');
+        loader.id = olderLoaderId;
+        loader.textContent = 'Загрузка...';
+        loader.style.cssText = `
+            position: sticky;
+            top: 10px;
+            z-index: 3;
+            align-self: center;
+            display: none;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.35);
+            background: rgba(15,23,42,0.72);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 700;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 24px rgba(15,23,42,0.18);
+        `;
+
+        chat.prepend(loader);
+        return loader;
+    }
+
+    function setOlderLoaderVisible(visible) {
+        const loader = ensureOlderLoader();
+        loader.style.display = visible ? 'inline-flex' : 'none';
     }
 
     function closeAllMessageMenus() {
@@ -292,7 +327,9 @@ if (chat) {
         const msg = normalizeMessage(rawMsg);
 
         const rows = Array.from(chat.querySelectorAll('.message-row'));
-        const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
+        const lastMessageEl = rows.filter(row => row.id !== olderLoaderId).length
+            ? rows.filter(row => row.id !== olderLoaderId).slice(-1)[0]
+            : null;
 
         let prevMsg = null;
         if (lastMessageEl) {
@@ -317,16 +354,41 @@ if (chat) {
             const data = await res.json();
             const messages = (data.messages || []).map(msg => normalizeMessage(msg));
 
-            const fragment = document.createDocumentFragment();
-            messages.forEach((msg, index) => {
-                const prevMsg = index > 0 ? messages[index - 1] : null;
-                fragment.appendChild(renderMessage(msg, prevMsg));
+            const existingRows = Array.from(chat.querySelectorAll('.message-row'));
+            const existingIds = new Set(
+                existingRows.map(row => Number(row.getAttribute('data-message-id'))).filter(Boolean)
+            );
+
+            if (!existingRows.length) {
+                const fragment = document.createDocumentFragment();
+                messages.forEach((msg, index) => {
+                    const prevMsg = index > 0 ? messages[index - 1] : null;
+                    fragment.appendChild(renderMessage(msg, prevMsg));
+                });
+                chat.replaceChildren(fragment);
+                oldestMessageId = messages.length ? messages[0].id : null;
+                hasMoreOlderMessages = !!data.has_more;
+                lastRenderedMessageSignature = buildMessagesSignature(messages);
+                return;
+            }
+
+            messages.forEach(msg => {
+                if (existingIds.has(Number(msg.id))) {
+                    updateExistingMessage(msg);
+                }
             });
 
-            chat.replaceChildren(fragment);
+            messages.forEach(msg => {
+                if (!existingIds.has(Number(msg.id))) {
+                    appendMessage(msg);
+                }
+            });
 
-            oldestMessageId = messages.length ? messages[0].id : null;
-            hasMoreOlderMessages = !!data.has_more;
+            if (oldestMessageId === null && messages.length) {
+                oldestMessageId = messages[0].id;
+            }
+
+            hasMoreOlderMessages = typeof data.has_more !== 'undefined' ? !!data.has_more : hasMoreOlderMessages;
             lastRenderedMessageSignature = buildMessagesSignature(messages);
         } catch (err) {
             console.error(err);
@@ -337,9 +399,11 @@ if (chat) {
         if (!dialogId || !oldestMessageId || !hasMoreOlderMessages || isLoadingOlderMessages) return;
 
         isLoadingOlderMessages = true;
+        setOlderLoaderVisible(true);
 
         try {
-            const previousScrollHeight = chat.scrollHeight;
+            const firstExistingRow = chat.querySelector('.message-row');
+            const previousTop = firstExistingRow ? firstExistingRow.getBoundingClientRect().top : 0;
 
             const res = await fetch(`/api/dialogs/${dialogId}/messages/?limit=30&before_id=${oldestMessageId}`);
             if (!res.ok) throw new Error('Ошибка подгрузки старых сообщений');
@@ -349,7 +413,6 @@ if (chat) {
 
             if (!messages.length) {
                 hasMoreOlderMessages = false;
-                isLoadingOlderMessages = false;
                 return;
             }
 
@@ -364,12 +427,17 @@ if (chat) {
             oldestMessageId = messages[0].id;
             hasMoreOlderMessages = !!data.has_more;
 
-            const newScrollHeight = chat.scrollHeight;
-            chat.scrollTop += newScrollHeight - previousScrollHeight;
+            requestAnimationFrame(() => {
+                if (!firstExistingRow) return;
+                const newTop = firstExistingRow.getBoundingClientRect().top;
+                const diff = newTop - previousTop;
+                chat.scrollTop += diff;
+            });
         } catch (err) {
             console.error(err);
         } finally {
             isLoadingOlderMessages = false;
+            setOlderLoaderVisible(false);
         }
     }
 

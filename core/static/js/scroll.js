@@ -9,12 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
     }
 
-    function scrollToBottom(force = false) {
-        if (force || isNearBottom()) {
-            chat.scrollTop = chat.scrollHeight;
-        }
-    }
-
     function updateScrollButton() {
         if (!scrollBtn) return;
 
@@ -29,12 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 👉 ТОЛЬКО по кнопке — плавный скролл
     scrollBtn?.addEventListener('click', () => {
-        scrollToBottom(true);
+        chat.scrollTo({
+            top: chat.scrollHeight,
+            behavior: 'smooth'
+        });
     });
 
+    // 👉 только обновление кнопки
     chat.addEventListener('scroll', updateScrollButton);
-
-    // при загрузке
-    scrollToBottom(true);
 });

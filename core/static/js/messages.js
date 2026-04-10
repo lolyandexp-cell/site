@@ -329,6 +329,18 @@ if (chat) {
         return Array.from(chat.querySelectorAll('.message-row'));
     }
 
+    function hydrateStateFromDom() {
+        const rows = getRenderableRows();
+        if (!rows.length) return;
+
+        const firstRow = rows[0];
+        const firstId = Number(firstRow.getAttribute('data-message-id'));
+
+        if (firstId) {
+            oldestMessageId = firstId;
+        }
+    }
+
     function appendMessage(rawMsg) {
         const msg = normalizeMessage(rawMsg);
 
@@ -368,10 +380,12 @@ if (chat) {
         }
 
         if (anchorId) {
-            const sameAnchorRow = chat.querySelector(`.message-row[data-message-id="${anchorId}"]`);
-            if (sameAnchorRow) {
-                chat.scrollTop = sameAnchorRow.offsetTop - anchorOffset;
-            }
+            requestAnimationFrame(() => {
+                const sameAnchorRow = chat.querySelector(`.message-row[data-message-id="${anchorId}"]`);
+                if (sameAnchorRow) {
+                    chat.scrollTop = sameAnchorRow.offsetTop - anchorOffset;
+                }
+            });
         }
     }
 
@@ -489,6 +503,8 @@ if (chat) {
         }
     });
 
+    hydrateStateFromDom();
+
     window.ChatMessages = {
         getCookie,
         escapeHtml,
@@ -506,6 +522,7 @@ if (chat) {
         appendMessage,
         resetSignature() {
             lastRenderedMessageSignature = null;
-        }
+        },
+        hydrateStateFromDom
     };
 }

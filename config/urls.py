@@ -10,7 +10,7 @@ from core.views import (
     dialog_list, dialog_detail, get_messages, get_dialogs, send_message,
     delete_message, edit_message, typing, get_typing,
     save_push_subscription, delete_push_subscription,
-    service_worker, web_manifest
+    service_worker, web_manifest, mark_dialog_read
 )
 
 urlpatterns = [
@@ -30,7 +30,7 @@ urlpatterns = [
     path('api/push/unsubscribe/', delete_push_subscription),
     path('service-worker.js', service_worker, name='service_worker'),
     path('manifest.webmanifest', web_manifest, name='web_manifest'),
-    path('api/dialogs/<int:dialog_id>/read/', auth_views.mark_dialog_read, name='mark_dialog_read'),
+    path('api/dialogs/<int:dialog_id>/read/', mark_dialog_read, name='mark_dialog_read'),
 ]
 
 if settings.DEBUG:

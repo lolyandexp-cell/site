@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 👉 ТОЛЬКО по кнопке — плавный скролл
     scrollBtn?.addEventListener('click', () => {
         chat.scrollTo({
             top: chat.scrollHeight,
@@ -31,6 +30,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 👉 только обновление кнопки
     chat.addEventListener('scroll', updateScrollButton);
 });

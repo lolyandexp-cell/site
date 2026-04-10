@@ -441,6 +441,7 @@ a, button, input, textarea, select { font: inherit; }
     scroll-behavior: smooth;
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    overflow-anchor: none;
 }
 .chat::-webkit-scrollbar {
     width: 10px;
@@ -472,7 +473,13 @@ a, button, input, textarea, select { font: inherit; }
     box-shadow: var(--shadow-sm);
 }
 
-.message-row { display: flex; width: 100%; position: relative; z-index: 1; }
+.message-row {
+    display: flex;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    overflow-anchor: none;
+}
 .message-row.new-message { animation: fadeInUp 0.18s ease; }
 .message-row.menu-open { z-index: 50; }
 .message-row.my { justify-content: flex-end; }
@@ -631,6 +638,10 @@ audio { width: min(320px, 100%); max-width: 100%; margin-top: 8px; display: bloc
     position: sticky;
     top: 12px;
     z-index: 2;
+}
+
+#olderMessagesLoader {
+    overflow-anchor: none;
 }
 
 .input-area {

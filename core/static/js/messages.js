@@ -82,6 +82,7 @@ if (chat) {
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 10px 24px rgba(15,23,42,0.18);
+            pointer-events: none;
         `;
 
         chat.prepend(loader);
@@ -193,7 +194,8 @@ if (chat) {
         const msg = normalizeMessage(rawMsg);
 
         const row = document.createElement('div');
-        row.className = 'message-row ' + (msg.is_me ? 'my' : 'other');
+        row.className = 'message-row';
+        row.classList.add(msg.is_me ? 'my' : 'other');
         row.setAttribute('data-message-id', msg.id);
         row.setAttribute('data-displayed-sender-id', msg.displayed_sender_id || '');
 
@@ -323,13 +325,15 @@ if (chat) {
         return true;
     }
 
+    function getRenderableRows() {
+        return Array.from(chat.querySelectorAll('.message-row'));
+    }
+
     function appendMessage(rawMsg) {
         const msg = normalizeMessage(rawMsg);
 
-        const rows = Array.from(chat.querySelectorAll('.message-row'));
-        const lastMessageEl = rows.filter(row => row.id !== olderLoaderId).length
-            ? rows.filter(row => row.id !== olderLoaderId).slice(-1)[0]
-            : null;
+        const rows = getRenderableRows();
+        const lastMessageEl = rows.length ? rows[rows.length - 1] : null;
 
         let prevMsg = null;
         if (lastMessageEl) {
@@ -344,6 +348,33 @@ if (chat) {
         return node;
     }
 
+    function prependOlderMessages(messages) {
+        if (!messages.length) return;
+
+        const existingFirstRow = chat.querySelector('.message-row');
+        const anchorId = existingFirstRow ? existingFirstRow.getAttribute('data-message-id') : null;
+        const anchorOffset = existingFirstRow ? (existingFirstRow.offsetTop - chat.scrollTop) : 0;
+
+        const fragment = document.createDocumentFragment();
+        messages.forEach((msg, index) => {
+            const prevMsg = index > 0 ? messages[index - 1] : null;
+            fragment.appendChild(renderMessage(msg, prevMsg));
+        });
+
+        if (existingFirstRow) {
+            chat.insertBefore(fragment, existingFirstRow);
+        } else {
+            chat.appendChild(fragment);
+        }
+
+        if (anchorId) {
+            const sameAnchorRow = chat.querySelector(`.message-row[data-message-id="${anchorId}"]`);
+            if (sameAnchorRow) {
+                chat.scrollTop = sameAnchorRow.offsetTop - anchorOffset;
+            }
+        }
+    }
+
     async function loadMessages(dialogId) {
         if (!dialogId) return;
 
@@ -354,7 +385,7 @@ if (chat) {
             const data = await res.json();
             const messages = (data.messages || []).map(msg => normalizeMessage(msg));
 
-            const existingRows = Array.from(chat.querySelectorAll('.message-row'));
+            const existingRows = getRenderableRows();
             const existingIds = new Set(
                 existingRows.map(row => Number(row.getAttribute('data-message-id'))).filter(Boolean)
             );
@@ -402,9 +433,6 @@ if (chat) {
         setOlderLoaderVisible(true);
 
         try {
-            const firstExistingRow = chat.querySelector('.message-row');
-            const previousTop = firstExistingRow ? firstExistingRow.getBoundingClientRect().top : 0;
-
             const res = await fetch(`/api/dialogs/${dialogId}/messages/?limit=30&before_id=${oldestMessageId}`);
             if (!res.ok) throw new Error('Ошибка подгрузки старых сообщений');
 
@@ -416,23 +444,10 @@ if (chat) {
                 return;
             }
 
-            const fragment = document.createDocumentFragment();
-            messages.forEach((msg, index) => {
-                const prevMsg = index > 0 ? messages[index - 1] : null;
-                fragment.appendChild(renderMessage(msg, prevMsg));
-            });
-
-            chat.prepend(fragment);
+            prependOlderMessages(messages);
 
             oldestMessageId = messages[0].id;
             hasMoreOlderMessages = !!data.has_more;
-
-            requestAnimationFrame(() => {
-                if (!firstExistingRow) return;
-                const newTop = firstExistingRow.getBoundingClientRect().top;
-                const diff = newTop - previousTop;
-                chat.scrollTop += diff;
-            });
         } catch (err) {
             console.error(err);
         } finally {

@@ -438,7 +438,7 @@ a, button, input, textarea, select { font: inherit; }
     position: relative;
     z-index: 1;
     min-height: 0;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     overflow-anchor: none;

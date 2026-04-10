@@ -1007,8 +1007,6 @@ if (fileInput) {
 restoreDraft();
 syncMainDialogTitle();
 renderSelectedFilesPreview();
-window.ChatMessages?.resetSignature();
-window.ChatMessages?.loadMessages(dialogId);
 
 if (dialogsList) {
     const dialogsObserver = new MutationObserver(() => {
@@ -1019,7 +1017,9 @@ if (dialogsList) {
 
 window.addEventListener('load', function() {
     syncMainDialogTitle();
-    scrollChatToBottom(true);
+    requestAnimationFrame(() => {
+        scrollChatToBottom(true);
+    });
     focusMessageInput();
 });
 

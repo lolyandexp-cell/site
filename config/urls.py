@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/push/unsubscribe/', delete_push_subscription),
     path('service-worker.js', service_worker, name='service_worker'),
     path('manifest.webmanifest', web_manifest, name='web_manifest'),
+    path('api/dialogs/<int:dialog_id>/read/', auth_views.mark_dialog_read, name='mark_dialog_read'),
 ]
 
 if settings.DEBUG:

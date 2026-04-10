@@ -493,3 +493,35 @@ def service_worker(request):
 
 def web_manifest(request):
     return render(request, 'core/manifest.webmanifest', content_type='application/manifest+json')
+
+
+@login_required
+@require_POST
+def mark_dialog_read(request, dialog_id):
+    dialog = get_object_or_404(Dialog, id=dialog_id)
+
+    is_member = DialogMember.objects.filter(dialog=dialog, user=request.user).exists()
+    if not is_member:
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
+    unread_messages = Message.objects.filter(dialog=dialog).exclude(
+        real_sender=request.user
+    ).exclude(
+        reads__user=request.user
+    )
+
+    unread_ids = list(unread_messages.values_list('id', flat=True))
+
+    for message_id in unread_ids:
+        MessageRead.objects.get_or_create(
+            message_id=message_id,
+            user=request.user
+        )
+
+    last_message = Message.objects.filter(dialog=dialog).order_by('-id').first()
+
+    return JsonResponse({
+        'ok': True,
+        'read_ids': unread_ids,
+        'last_message_id': last_message.id if last_message else None,
+    })

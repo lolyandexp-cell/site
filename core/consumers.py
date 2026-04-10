@@ -2,7 +2,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 
-from .models import Dialog, Message, DialogMember
+from .models import Dialog, Message, DialogMember, MessageRead
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -65,6 +65,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message': message_data,
                 }
             )
+            return
+
+        if event_type == 'read_messages':
+            last_message_id = data.get('last_message_id')
+            if not last_message_id:
+                return
+
+            read_ids = await self.mark_messages_as_read(int(last_message_id))
+
+            if read_ids:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'messages_read_event',
+                        'reader_user_id': self.scope["user"].id,
+                        'message_ids': read_ids,
+                    }
+                )
+            return
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -78,6 +97,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'username': event['username'],
             'display_name': event['display_name'],
             'user_id': event['user_id'],
+        }))
+
+    async def messages_read_event(self, event):
+        await self.send(text_data=json.dumps({
+            'event_type': 'messages_read',
+            'reader_user_id': event['reader_user_id'],
+            'message_ids': event['message_ids'],
         }))
 
     @database_sync_to_async
@@ -112,4 +138,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'attachments': [],
             'can_edit': True if can_manage or message.real_sender_id == user.id else False,
             'can_delete': True if can_manage or message.real_sender_id == user.id else False,
+            'is_read': False,
         }
+
+    @database_sync_to_async
+    def mark_messages_as_read(self, last_message_id):
+        user = self.scope["user"]
+
+        unread_messages = Message.objects.filter(
+            dialog_id=self.dialog_id,
+            id__lte=last_message_id
+        ).exclude(
+            real_sender=user
+        ).exclude(
+            reads__user=user
+        )
+
+        read_ids = list(unread_messages.values_list('id', flat=True))
+
+        if read_ids:
+            MessageRead.objects.bulk_create(
+                [
+                    MessageRead(message_id=message_id, user=user)
+                    for message_id in read_ids
+                ],
+                ignore_conflicts=True
+            )
+
+        return read_ids

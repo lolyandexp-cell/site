@@ -671,6 +671,8 @@ if (chatBox) {
         } else {
             updateScrollButtonVisibility();
         }
+
+        sendReadReceipt();
     });
 }
 
@@ -691,6 +693,36 @@ function syncMainDialogTitle() {
     if (displayName) mainDialogTitle.textContent = displayName;
 }
 
+function sendReadReceipt() {
+    if (!chatBox) return;
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+    const rows = Array.from(chatBox.querySelectorAll('.message-row.other[data-message-id]'));
+    if (!rows.length) return;
+
+    const chatRect = chatBox.getBoundingClientRect();
+    let lastVisibleOtherMessageId = null;
+
+    rows.forEach(row => {
+        const rect = row.getBoundingClientRect();
+        const visibleEnough = rect.top < chatRect.bottom && rect.bottom <= chatRect.bottom + 12;
+
+        if (visibleEnough) {
+            const messageId = Number(row.getAttribute('data-message-id'));
+            if (messageId) {
+                lastVisibleOtherMessageId = messageId;
+            }
+        }
+    });
+
+    if (!lastVisibleOtherMessageId) return;
+
+    socket.send(JSON.stringify({
+        type: 'read_messages',
+        last_message_id: lastVisibleOtherMessageId
+    }));
+}
+
 const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
 const socket = new WebSocket(`${wsScheme}://${window.location.host}/ws/dialogs/${dialogId}/`);
 
@@ -709,6 +741,28 @@ socket.onmessage = function(e) {
                 typingIndicator.textContent = '';
             }, 2000);
         }
+        return;
+    }
+
+    if (data.event_type === 'messages_read') {
+        const readerUserId = Number(data.reader_user_id);
+        const messageIds = data.message_ids || [];
+
+        if (readerUserId === currentUserId) {
+            return;
+        }
+
+        messageIds.forEach(messageId => {
+            const row = document.querySelector(`.message-row.my[data-message-id="${messageId}"]`);
+            if (!row) return;
+
+            const checks = row.querySelector('.message-checks');
+            if (checks) {
+                checks.textContent = '✓✓';
+                checks.classList.add('read');
+            }
+        });
+
         return;
     }
 
@@ -733,6 +787,10 @@ socket.onmessage = function(e) {
         if (chatBox) {
             if (!wasNearBottom && !msg.is_me) ensureNewMessagesDivider();
             window.ChatMessages?.appendMessage(msg);
+
+            requestAnimationFrame(() => {
+                sendReadReceipt();
+            });
         }
 
         if (wasNearBottom || msg.is_me) {
@@ -747,8 +805,18 @@ socket.onmessage = function(e) {
     }
 };
 
+let socketReconnectTimer = null;
+
 socket.onclose = function(e) {
     console.log('WebSocket закрыт', e);
+
+    if (socketReconnectTimer) {
+        clearTimeout(socketReconnectTimer);
+    }
+
+    socketReconnectTimer = setTimeout(() => {
+        window.location.reload();
+    }, 3000);
 };
 
 socket.onerror = function(e) {
@@ -1008,6 +1076,10 @@ restoreDraft();
 syncMainDialogTitle();
 renderSelectedFilesPreview();
 
+requestAnimationFrame(() => {
+    sendReadReceipt();
+});
+
 if (dialogsList) {
     const dialogsObserver = new MutationObserver(() => {
         syncMainDialogTitle();
@@ -1028,6 +1100,31 @@ if (messageInput && messageForm) {
         autoResizeTextarea();
         saveDraft();
         sendTyping();
+    });
+
+    messageInput.addEventListener('paste', function(event) {
+        const items = event.clipboardData?.items || [];
+        const imageFiles = [];
+
+        for (const item of items) {
+            if (item.type && item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    const ext = file.type.split('/')[1] || 'png';
+                    const renamedFile = new File(
+                        [file],
+                        `pasted-image-${Date.now()}.${ext}`,
+                        { type: file.type }
+                    );
+                    imageFiles.push(renamedFile);
+                }
+            }
+        }
+
+        if (imageFiles.length) {
+            event.preventDefault();
+            addFilesToSelection(imageFiles, true);
+        }
     });
 
     autoResizeTextarea();
@@ -1060,11 +1157,6 @@ if (chatBox) {
     });
 }
 
-setInterval(() => {
-    if (!document.hidden && (!socket || socket.readyState !== WebSocket.OPEN)) {
-        window.ChatMessages?.loadMessages(dialogId);
-    }
-}, 15000);
 </script>
 {% endif %}
 
